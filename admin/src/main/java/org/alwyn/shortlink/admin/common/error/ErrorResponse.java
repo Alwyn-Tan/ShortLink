@@ -5,6 +5,7 @@ public enum ErrorResponse {
     USER_REGISTER_ERROR("A000100", "User Registration Error"),
     USER_NAME_EXIST_ERROR("A000111", "User Name Exists Error"),
     USER_NAME_NOT_EXIST_ERROR("A000112", "User Name Not Exists Error"),
+    USER_PASSWORD_ERROR("A000113", "User Password Error or User Name Does NOt Exist"),
     GROUP_NAME_EXIST_ERROR("A000120", "Group Name Exists Error"),
     GROUP_NAME_NULL_ERROR("A000121", "Group Name Null Error"),
     USER_LOGIN_ERROR("A000200", "Uer Login Error"),

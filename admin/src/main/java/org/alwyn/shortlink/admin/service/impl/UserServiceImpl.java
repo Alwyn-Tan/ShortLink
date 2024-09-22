@@ -3,9 +3,9 @@ package org.alwyn.shortlink.admin.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.lang.UUID;
+import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
@@ -40,8 +40,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     private final RBloomFilter<String> usernameBloomFilter;
     private final RedissonClient redissonClient;
     private final StringRedisTemplate stringRedisTemplate;
+
     @Override
-    public UserRespDTO getUserByUsername(String username){
+    public UserRespDTO getUserByUsername(String username) {
         LambdaQueryWrapper<UserDO> queryWrapper = Wrappers.lambdaQuery(UserDO.class)
                 .eq(UserDO::getUsername, username);
         UserDO userDO = baseMapper.selectOne(queryWrapper);
@@ -68,15 +69,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         if (!lock.tryLock()) {
             throw new ClientException(CLIENT_ERROR);
         }
-        try{
+        try {
             int inserted = baseMapper.insert(BeanUtil.toBean(reqDTO, UserDO.class));
-            if(inserted == 0){
+            if (inserted == 0) {
                 throw new ClientException(CLIENT_ERROR);
             }
             usernameBloomFilter.add(reqDTO.getUsername());
-        }catch (DuplicateKeyException e){
+        } catch (DuplicateKeyException e) {
             throw new ClientException(USER_NAME_EXIST_ERROR);
-        }finally{
+        } finally {
             lock.unlock();
         }
     }
@@ -90,7 +91,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
 
     @Override
     public UserLoginRespDTO loginUserByUsernameAndPassword(UserLoginReqDTO reqDTO) {
-        if(!usernameBloomFilter.contains(reqDTO.getUsername())){
+        if (!usernameBloomFilter.contains(reqDTO.getUsername())) {
             throw new ClientException(USER_NAME_NOT_EXIST_ERROR);
         }
         LambdaQueryWrapper<UserDO> queryWrapper = Wrappers.lambdaQuery(UserDO.class)
@@ -98,9 +99,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
                 .eq(UserDO::getPassword, reqDTO.getPassword())
                 .eq(UserDO::getDelFlag, 0);
         UserDO userDO = baseMapper.selectOne(queryWrapper);
+        if (userDO == null) {
+            throw new ClientException(USER_PASSWORD_ERROR);
+        }
         //query whether the user has login
-        Map<Object, Object> hasLoginMap =  stringRedisTemplate.opsForHash().entries(USER_LOGIN_KEY + reqDTO.getUsername());
-        if(CollUtil.isNotEmpty(hasLoginMap)){
+        Map<Object, Object> hasLoginMap = stringRedisTemplate.opsForHash().entries(USER_LOGIN_KEY + reqDTO.getUsername());
+        if (CollUtil.isNotEmpty(hasLoginMap)) {
             stringRedisTemplate.expire(USER_LOGIN_KEY + reqDTO.getUsername(), 30L, java.util.concurrent.TimeUnit.MINUTES);
             String loginToken = hasLoginMap.keySet().stream()
                     .findFirst()
@@ -117,14 +121,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
 
     @Override
     public Boolean checkLoginByUsernameAndLoginToken(String username, String loginToken) {
-        return  stringRedisTemplate.opsForHash().get(USER_LOGIN_KEY + username, loginToken) != null;
+        return stringRedisTemplate.opsForHash().get(USER_LOGIN_KEY + username, loginToken) != null;
     }
 
     @Override
     public void logoutUserByUsernameAndLoginToken(String username, String token) {
-        if(checkLoginByUsernameAndLoginToken(username, token)){
+        if (checkLoginByUsernameAndLoginToken(username, token)) {
             stringRedisTemplate.delete(USER_LOGIN_KEY + username);
-        }else{
+        } else {
             throw new ClientException(USER_TOKEN_INVALID_ERROR);
         }
     }
