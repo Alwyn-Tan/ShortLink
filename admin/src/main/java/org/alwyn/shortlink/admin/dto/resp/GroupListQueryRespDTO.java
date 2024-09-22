@@ -11,6 +11,8 @@ public class GroupListQueryRespDTO {
 
     private String username;
 
+    private Integer linkCount;
+
     private Integer sortOrder;
 
 }

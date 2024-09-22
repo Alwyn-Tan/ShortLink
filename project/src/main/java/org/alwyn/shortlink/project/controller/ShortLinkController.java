@@ -6,13 +6,13 @@ import org.alwyn.shortlink.project.common.result.Result;
 import org.alwyn.shortlink.project.common.result.Results;
 import org.alwyn.shortlink.project.dto.req.LinkCreateReqDTO;
 import org.alwyn.shortlink.project.dto.req.LinkPageQueryReqDTO;
+import org.alwyn.shortlink.project.dto.resp.LinkCountQueryRespDTO;
 import org.alwyn.shortlink.project.dto.resp.LinkCreateRespDTO;
 import org.alwyn.shortlink.project.dto.resp.LinkPageQueryRespDTO;
 import org.alwyn.shortlink.project.service.LinkService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -27,6 +27,11 @@ public class ShortLinkController {
     @GetMapping("/api/short-link/project/link/query")
     public Result<IPage<LinkPageQueryRespDTO>> queryShortLinkPage(LinkPageQueryReqDTO requestParam) {
         return Results.success(linkService.queryShortLinkPage(requestParam));
+    }
+
+    @GetMapping("/api/short-link/project/link/count")
+    public Result<List<LinkCountQueryRespDTO>> listLinkCount(@RequestParam("requestParam") List<String> requestParam) {
+        return Results.success(linkService.listLinkCount(requestParam));
     }
 
 }

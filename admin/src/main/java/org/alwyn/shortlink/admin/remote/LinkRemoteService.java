@@ -6,9 +6,11 @@ import com.alibaba.fastjson2.TypeReference;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import org.alwyn.shortlink.admin.common.result.Result;
 import org.alwyn.shortlink.admin.remote.dto.req.LinkPageQueryReqDTO;
+import org.alwyn.shortlink.admin.remote.dto.resp.LinkCountQueryRespDTO;
 import org.alwyn.shortlink.admin.remote.dto.resp.LinkPageQueryRespDTO;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public interface LinkRemoteService {
@@ -18,6 +20,14 @@ public interface LinkRemoteService {
         requestMap.put("current", requestParam.getCurrent());
         requestMap.put("size", requestParam.getSize());
         String resultPageString = HttpUtil.get("http://127.0.0.1:8080/api/short-link/project/link/query", requestMap);
+        return JSON.parseObject(resultPageString, new TypeReference<>() {
+        });
+    }
+
+    default Result<List<LinkCountQueryRespDTO>> listLinkCount(List<String> requestParam) {
+        Map<String, Object> requestMap = new HashMap<>();
+        requestMap.put("requestParam", requestParam);
+        String resultPageString = HttpUtil.get("http://127.0.0.1:8080/api/short-link/project/link/count", requestMap);
         return JSON.parseObject(resultPageString, new TypeReference<>() {
         });
     }

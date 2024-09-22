@@ -2,6 +2,7 @@ package org.alwyn.shortlink.project.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -13,6 +14,7 @@ import org.alwyn.shortlink.project.dao.entity.LinkDO;
 import org.alwyn.shortlink.project.dao.mapper.LinkMapper;
 import org.alwyn.shortlink.project.dto.req.LinkCreateReqDTO;
 import org.alwyn.shortlink.project.dto.req.LinkPageQueryReqDTO;
+import org.alwyn.shortlink.project.dto.resp.LinkCountQueryRespDTO;
 import org.alwyn.shortlink.project.dto.resp.LinkCreateRespDTO;
 import org.alwyn.shortlink.project.dto.resp.LinkPageQueryRespDTO;
 import org.alwyn.shortlink.project.service.LinkService;
@@ -21,6 +23,8 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.alwyn.shortlink.project.common.error.ErrorResponse.SERVICE_SYSTEM_TIMEOUT;
@@ -65,6 +69,17 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
                 .eq(LinkDO::getDelFlag, 0);
         IPage<LinkDO> resultPage = baseMapper.selectPage(requestParam, queryWrapper);
         return resultPage.convert(each -> BeanUtil.toBean(each, LinkPageQueryRespDTO.class));
+    }
+
+    @Override
+    public List<LinkCountQueryRespDTO> listLinkCount(List<String> requestParam) {
+        QueryWrapper<LinkDO> queryWrapper = Wrappers.query(new LinkDO())
+                .select("gid as gid, count(*) as linkCount")
+                .in("gid", requestParam)
+                .eq("enable_status", 1)
+                .groupBy("gid");
+        List<Map<String, Object>> LinkDOList = baseMapper.selectMaps(queryWrapper);
+        return BeanUtil.copyToList(LinkDOList, LinkCountQueryRespDTO.class);
     }
 
     private String generateLinkSuffix(LinkCreateReqDTO requestParam) {
