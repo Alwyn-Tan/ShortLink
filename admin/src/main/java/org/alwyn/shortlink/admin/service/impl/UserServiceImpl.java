@@ -102,6 +102,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         if (userDO == null) {
             throw new ClientException(USER_PASSWORD_ERROR);
         }
+
+        Boolean hasLogin = stringRedisTemplate.hasKey("login_" + reqDTO.getUsername());
+        if (hasLogin != null && hasLogin) {
+            throw new ClientException(USER_HAS_LOGGED_IN_ERROR);
+        }
+
         //query whether the user has login
         Map<Object, Object> hasLoginMap = stringRedisTemplate.opsForHash().entries(USER_LOGIN_KEY + reqDTO.getUsername());
         if (CollUtil.isNotEmpty(hasLoginMap)) {
