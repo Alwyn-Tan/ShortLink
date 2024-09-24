@@ -47,6 +47,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
                 .originLink(requestParam.getOriginLink())
                 .fullShortLink(fullShortLink)
                 .gid(requestParam.getGid())
+                .enableStatus(1)
                 .build();
         try {
             baseMapper.insert(linkDO);
