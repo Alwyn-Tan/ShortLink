@@ -15,6 +15,7 @@ import org.alwyn.shortlink.admin.dao.entity.GroupDO;
 import org.alwyn.shortlink.admin.dao.mapper.GroupMapper;
 import org.alwyn.shortlink.admin.dto.req.GroupUpdateReqDTO;
 import org.alwyn.shortlink.admin.dto.resp.GroupListQueryRespDTO;
+import org.alwyn.shortlink.admin.remote.LinkRemoteService;
 import org.alwyn.shortlink.admin.service.GroupService;
 import org.redisson.api.RBloomFilter;
 import org.redisson.api.RLock;
@@ -35,6 +36,9 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
     private final RedissonClient redissonClient;
     private final RBloomFilter<String> gidBloomFilter;
     private static final Integer MAX_RETRY_LIMIT = 10;
+
+    LinkRemoteService shortLinkRemoteService = new LinkRemoteService() {
+    };
 
     @Override
     public void createGroupByGroupName(String groupname) {
@@ -86,6 +90,9 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
 
     @Override
     public List<GroupListQueryRespDTO> listGroup() {
+        if (UserContext.getUserNameFromUserContext() == null) {
+            throw new ServiceException(USER_LOGIN_ERROR);
+        }
         LambdaQueryWrapper<GroupDO> lambdaQueryWrapper = Wrappers.lambdaQuery(GroupDO.class)
                 .eq(GroupDO::getUsername, UserContext.getUserNameFromUserContext())
                 .eq(GroupDO::getDelFlag, 0)

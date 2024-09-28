@@ -35,8 +35,8 @@ public class UserController {
      *
      * @param username* @return
      */
-    @GetMapping("/api/short-link/admin/users/existence{username}")
-    public Result<Boolean> checkUsernameExists(@PathVariable("username") String username) {
+    @GetMapping("/api/short-link/admin/users/existence")
+    public Result<Boolean> checkUsernameExists(@RequestParam("username") String username) {
         return Results.success(userService.checkUsernameExists(username));
     }
 

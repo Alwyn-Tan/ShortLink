@@ -5,6 +5,7 @@ import com.alibaba.ttl.TransmittableThreadLocal;
 import java.util.Optional;
 
 public final class UserContext {
+
     private static final ThreadLocal<UserContextDTO> USER_THREAD_LOCAL = new TransmittableThreadLocal<>();
 
     public static void setUserContext(UserContextDTO userContextDTO) {
