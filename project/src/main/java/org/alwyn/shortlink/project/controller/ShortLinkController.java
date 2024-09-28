@@ -6,6 +6,7 @@ import org.alwyn.shortlink.project.common.result.Result;
 import org.alwyn.shortlink.project.common.result.Results;
 import org.alwyn.shortlink.project.dto.req.LinkCreateReqDTO;
 import org.alwyn.shortlink.project.dto.req.LinkPageQueryReqDTO;
+import org.alwyn.shortlink.project.dto.req.LinkUpdateReqDTO;
 import org.alwyn.shortlink.project.dto.resp.LinkCountQueryRespDTO;
 import org.alwyn.shortlink.project.dto.resp.LinkCreateRespDTO;
 import org.alwyn.shortlink.project.dto.resp.LinkPageQueryRespDTO;
@@ -33,5 +34,12 @@ public class ShortLinkController {
     public Result<List<LinkCountQueryRespDTO>> listLinkCount(@RequestParam("requestParam") List<String> requestParam) {
         return Results.success(linkService.listLinkCount(requestParam));
     }
+
+    @PutMapping("/api/short-link/project/link/update")
+    public Result<Void> updateLink(@RequestBody LinkUpdateReqDTO requestParam) {
+        linkService.updateLink(requestParam);
+        return Results.success();
+    }
+
 
 }

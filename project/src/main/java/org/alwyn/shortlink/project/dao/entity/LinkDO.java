@@ -43,6 +43,12 @@ public class LinkDO extends BaseDO {
 
     private String originLink;
 
+    /**
+     * 0: PERMANENT, 1: CUSTOM
+     */
+
+    private Integer validDateType;
+
     private Integer clickNum;
 
     private String gid;

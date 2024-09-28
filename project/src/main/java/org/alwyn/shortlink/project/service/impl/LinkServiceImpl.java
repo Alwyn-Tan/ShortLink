@@ -3,17 +3,20 @@ package org.alwyn.shortlink.project.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import groovy.util.logging.Slf4j;
 import lombok.RequiredArgsConstructor;
+import org.alwyn.shortlink.project.common.enums.ValidDateTypeEnum;
 import org.alwyn.shortlink.project.common.exception.ServiceException;
 import org.alwyn.shortlink.project.common.util.HashUtil;
 import org.alwyn.shortlink.project.dao.entity.LinkDO;
 import org.alwyn.shortlink.project.dao.mapper.LinkMapper;
 import org.alwyn.shortlink.project.dto.req.LinkCreateReqDTO;
 import org.alwyn.shortlink.project.dto.req.LinkPageQueryReqDTO;
+import org.alwyn.shortlink.project.dto.req.LinkUpdateReqDTO;
 import org.alwyn.shortlink.project.dto.resp.LinkCountQueryRespDTO;
 import org.alwyn.shortlink.project.dto.resp.LinkCreateRespDTO;
 import org.alwyn.shortlink.project.dto.resp.LinkPageQueryRespDTO;
@@ -25,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import static org.alwyn.shortlink.project.common.error.ErrorResponse.SERVICE_SYSTEM_TIMEOUT;
@@ -81,6 +85,39 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
                 .groupBy("gid");
         List<Map<String, Object>> LinkDOList = baseMapper.selectMaps(queryWrapper);
         return BeanUtil.copyToList(LinkDOList, LinkCountQueryRespDTO.class);
+    }
+
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public void updateLink(LinkUpdateReqDTO requestParam) {
+        LambdaQueryWrapper<LinkDO> queryWrapper = Wrappers.lambdaQuery(LinkDO.class)
+                .eq(LinkDO::getGid, requestParam.getGid())
+                .eq(LinkDO::getFullShortLink, requestParam.getFullShortUrl())
+                .eq(LinkDO::getEnableStatus, 1)
+                .eq(LinkDO::getDelFlag, 0);
+        LinkDO selectedLinkDO = baseMapper.selectOne(queryWrapper);
+
+        if (selectedLinkDO == null) {
+            throw new ServiceException("Link Not Exists");
+        }
+
+        LinkDO linkDOToBeUpdated = LinkDO.builder()
+                .domain(selectedLinkDO.getDomain())
+                .shortLink(selectedLinkDO.getShortLink())
+                .fullShortLink(selectedLinkDO.getFullShortLink())
+                .gid(selectedLinkDO.getGid())
+                .validDate(selectedLinkDO.getValidDate())
+                .build();
+
+        LambdaUpdateWrapper<LinkDO> updateWrapper = Wrappers.lambdaUpdate(LinkDO.class)
+                .eq(LinkDO::getGid, requestParam.getGid())
+                .eq(LinkDO::getFullShortLink, selectedLinkDO.getFullShortLink())
+                .eq(LinkDO::getEnableStatus, 1)
+                .eq(LinkDO::getDelFlag, 0)
+                .set(Objects.equals(requestParam.getValidDateType(), ValidDateTypeEnum.PERMANENT.getType()), LinkDO::getValidDate, null);
+
+        baseMapper.update(linkDOToBeUpdated, updateWrapper);
     }
 
     private String generateLinkSuffix(LinkCreateReqDTO requestParam) {
