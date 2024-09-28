@@ -23,6 +23,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Date;
+
 
 @Data
 @Builder
@@ -46,4 +48,7 @@ public class LinkDO extends BaseDO {
     private String gid;
 
     private Integer enableStatus;
+
+    private Date validDate;
+
 }
