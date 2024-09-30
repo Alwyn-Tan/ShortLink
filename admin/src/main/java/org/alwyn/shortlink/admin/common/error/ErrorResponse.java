@@ -11,6 +11,8 @@ public enum ErrorResponse {
     GROUP_NAME_NULL_ERROR("A000121", "Group Name Null Error"),
     USER_LOGIN_ERROR("A000200", "Uer Login Error"),
     USER_TOKEN_INVALID_ERROR("A000210", "User Token Invalid Error"),
+    LINK_EXISTS_ERROR("A000300", "Link Exists Error"),
+    LINK_NOT_EXISTS_ERROR("A000301", "Link Not Exists Error"),
     SERVICE_ERROR("B000001", "Service Error"),
     SERVICE_SYSTEM_TIMEOUT("B000100", "System Timeout"),
     REMOTE_ERROR("C000001", "Third Party Service Error");

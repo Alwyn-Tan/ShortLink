@@ -10,7 +10,8 @@ public enum ErrorResponse {
     USER_LOGIN_ERROR("A000200", "Uer Login Error"),
     USER_TOKEN_INVALID_ERROR("A000210", "User Token Invalid Error"),
     LINK_ERROR("A000300", "Link Error"),
-    LINK_NOT_EXIST_ERROR("A000301", "Link Not Exist Error"),
+    LINK_EXISTS_ERROR("A000301", "Link Exist Error"),
+    LINK_NOT_EXIST_ERROR("A000302", "Link Not Exist Error"),
     SERVICE_ERROR("B000001", "Service Error"),
     SERVICE_SYSTEM_TIMEOUT("B000100", "System Timeout"),
     REMOTE_ERROR("C000001", "Third Party Service Error");

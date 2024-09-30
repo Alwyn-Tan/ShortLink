@@ -31,7 +31,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
-import static org.alwyn.shortlink.project.common.error.ErrorResponse.SERVICE_SYSTEM_TIMEOUT;
+import static org.alwyn.shortlink.project.common.error.ErrorResponse.*;
 
 @Slf4j
 @Service
@@ -60,7 +60,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
         try {
             baseMapper.insert(linkDO);
         } catch (DuplicateKeyException ex) {
-            throw new ServiceException("Shortlink Exists");
+            throw new ServiceException(LINK_EXISTS_ERROR);
         }
         shortLinkBloomFilter.add(suffix);
         return LinkCreateRespDTO.builder()
@@ -98,21 +98,22 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
     public void updateLink(LinkUpdateReqDTO requestParam) {
         LambdaQueryWrapper<LinkDO> queryWrapper = Wrappers.lambdaQuery(LinkDO.class)
                 .eq(LinkDO::getGid, requestParam.getGid())
-                .eq(LinkDO::getFullShortLink, requestParam.getFullShortUrl())
+                .eq(LinkDO::getFullShortLink, requestParam.getFullShortLink())
                 .eq(LinkDO::getEnableStatus, 1)
                 .eq(LinkDO::getDelFlag, 0);
         LinkDO selectedLinkDO = baseMapper.selectOne(queryWrapper);
 
         if (selectedLinkDO == null) {
-            throw new ServiceException("Link Not Exists");
+            throw new ServiceException(LINK_NOT_EXIST_ERROR);
         }
 
         LinkDO linkDOToBeUpdated = LinkDO.builder()
                 .domain(selectedLinkDO.getDomain())
                 .suffix(selectedLinkDO.getSuffix())
-                .fullShortLink(selectedLinkDO.getFullShortLink())
+                .originLink(requestParam.getOriginLink())
                 .gid(selectedLinkDO.getGid())
                 .validDate(selectedLinkDO.getValidDate())
+                .validDateType(selectedLinkDO.getValidDateType())
                 .build();
 
         LambdaUpdateWrapper<LinkDO> updateWrapper = Wrappers.lambdaUpdate(LinkDO.class)

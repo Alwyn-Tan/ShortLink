@@ -7,9 +7,9 @@ import java.util.Date;
 
 @Data
 public class LinkUpdateReqDTO {
-    private String originUrl;
+    private String originLink;
 
-    private String fullShortUrl;
+    private String fullShortLink;
 
     private String gid;
 
