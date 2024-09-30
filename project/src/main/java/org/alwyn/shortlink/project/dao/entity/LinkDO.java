@@ -37,7 +37,7 @@ public class LinkDO extends BaseDO {
 
     private String domain;
 
-    private String shortLink;
+    private String suffix;
 
     private String fullShortLink;
 
@@ -46,7 +46,6 @@ public class LinkDO extends BaseDO {
     /**
      * 0: PERMANENT, 1: CUSTOM
      */
-
     private Integer validDateType;
 
     private Integer clickNum;

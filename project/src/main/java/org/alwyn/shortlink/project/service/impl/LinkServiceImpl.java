@@ -43,26 +43,31 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
     @Transactional(rollbackFor = Exception.class)
     @Override
     public LinkCreateRespDTO createShortLink(LinkCreateReqDTO requestParam) {
-        String linkSuffix = generateLinkSuffix(requestParam);
-        String fullShortLink = requestParam.getDomain() + "/" + linkSuffix;
+        String suffix = generateLinkSuffix(requestParam);
+        String fullShortLink = requestParam.getDomain() + "/" + suffix;
+
         LinkDO linkDO = LinkDO.builder()
                 .domain(requestParam.getDomain())
-                .shortLink(linkSuffix)
+                .suffix(suffix)
                 .originLink(requestParam.getOriginLink())
                 .fullShortLink(fullShortLink)
                 .gid(requestParam.getGid())
+                .validDateType(requestParam.getValidDateType())
+                .validDate(requestParam.getValidDate())
                 .enableStatus(1)
                 .build();
+
         try {
             baseMapper.insert(linkDO);
         } catch (DuplicateKeyException ex) {
             throw new ServiceException("Shortlink Exists");
         }
+        shortLinkBloomFilter.add(suffix);
         return LinkCreateRespDTO.builder()
-                .fullShortLink(requestParam.getDomain() + linkSuffix)
+                .fullShortLink(fullShortLink)
                 .gid(linkDO.getGid())
-                .originLink(requestParam.getOriginLink())
-                .shortLink(linkSuffix)
+                .originLink(linkDO.getOriginLink())
+                .suffix(suffix)
                 .build();
     }
 
@@ -104,7 +109,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
 
         LinkDO linkDOToBeUpdated = LinkDO.builder()
                 .domain(selectedLinkDO.getDomain())
-                .shortLink(selectedLinkDO.getShortLink())
+                .suffix(selectedLinkDO.getSuffix())
                 .fullShortLink(selectedLinkDO.getFullShortLink())
                 .gid(selectedLinkDO.getGid())
                 .validDate(selectedLinkDO.getValidDate())

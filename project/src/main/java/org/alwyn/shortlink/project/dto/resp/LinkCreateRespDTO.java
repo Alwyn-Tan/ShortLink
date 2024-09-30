@@ -15,7 +15,7 @@ public class LinkCreateRespDTO {
 
     private String originLink;
 
-    private String shortLink;
+    private String suffix;
 
     private String fullShortLink;
 }
