@@ -1,6 +1,7 @@
 package org.alwyn.shortlink.project.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
@@ -28,7 +29,10 @@ import org.alwyn.shortlink.project.dto.resp.LinkCreateRespDTO;
 import org.alwyn.shortlink.project.dto.resp.LinkPageQueryRespDTO;
 import org.alwyn.shortlink.project.service.LinkService;
 import org.redisson.api.RBloomFilter;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +41,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
+import static org.alwyn.shortlink.project.common.constant.RedisConstant.LINK_ROUTE_KEY;
+import static org.alwyn.shortlink.project.common.constant.RedisConstant.LOCK_LINK_ROUTE_KEY;
 import static org.alwyn.shortlink.project.common.error.ErrorResponse.*;
 
 @Slf4j
@@ -46,6 +52,8 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
 
     private final RBloomFilter<String> shortLinkBloomFilter;
     private final LinkRouteMapper linkRouteMapper;
+    private final StringRedisTemplate stringRedisTemplate;
+    private final RedissonClient redissonClient;
 
     @Transactional(rollbackFor = Exception.class)
     @Override
@@ -143,21 +151,44 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
     public void redirectLink(String suffix, ServletRequest request, ServletResponse response) {
         String serverName = request.getServerName();
         String fullShortLink = "https://" + serverName + "/" + suffix;
-        LambdaQueryWrapper<LinkRouteDO> linkRouteDOLambdaQueryWrapper = Wrappers.lambdaQuery(LinkRouteDO.class)
-                .eq(LinkRouteDO::getFullShortLink, fullShortLink);
-        LinkRouteDO linkRouteDO = linkRouteMapper.selectOne(linkRouteDOLambdaQueryWrapper);
-        if (linkRouteDO == null) {
+        String originLink = stringRedisTemplate.opsForValue().get(String.format(LINK_ROUTE_KEY, suffix));
+        //Redis hit
+        if (StrUtil.isNotBlank(originLink)) {
+            ((HttpServletResponse) response).sendRedirect(originLink);
             return;
-        }
+            //Redis miss
+        } else {
+            RLock lock = redissonClient.getLock(String.format(LOCK_LINK_ROUTE_KEY, suffix));
+            lock.lock();
+            try {
+                originLink = stringRedisTemplate.opsForValue().get(String.format(LINK_ROUTE_KEY, suffix));
 
-        LambdaQueryWrapper<LinkDO> linkDOLambdaQueryWrapper = Wrappers.lambdaQuery(LinkDO.class)
-                .eq(LinkDO::getGid, linkRouteDO.getGid())
-                .eq(LinkDO::getFullShortLink, fullShortLink)
-                .eq(LinkDO::getEnableStatus, 1)
-                .eq(LinkDO::getDelFlag, 0);
-        LinkDO linkDO = baseMapper.selectOne(linkDOLambdaQueryWrapper);
-        if (linkDO != null) {
-            ((HttpServletResponse) response).sendRedirect(linkDO.getOriginLink());
+                //Double check
+                if (StrUtil.isNotBlank(originLink)) {
+                    ((HttpServletResponse) response).sendRedirect(originLink);
+                    return;
+                } else {
+                    LambdaQueryWrapper<LinkRouteDO> linkRouteDOLambdaQueryWrapper = Wrappers.lambdaQuery(LinkRouteDO.class)
+                            .eq(LinkRouteDO::getFullShortLink, fullShortLink);
+                    LinkRouteDO linkRouteDO = linkRouteMapper.selectOne(linkRouteDOLambdaQueryWrapper);
+                    if (linkRouteDO == null) {
+                        return;
+                    } else {
+                        LambdaQueryWrapper<LinkDO> linkDOLambdaQueryWrapper = Wrappers.lambdaQuery(LinkDO.class)
+                                .eq(LinkDO::getGid, linkRouteDO.getGid())
+                                .eq(LinkDO::getFullShortLink, fullShortLink)
+                                .eq(LinkDO::getEnableStatus, 1)
+                                .eq(LinkDO::getDelFlag, 0);
+                        LinkDO linkDO = baseMapper.selectOne(linkDOLambdaQueryWrapper);
+                        if (linkDO != null) {
+                            stringRedisTemplate.opsForValue().set(String.format(LINK_ROUTE_KEY, suffix), linkDO.getOriginLink());
+                            ((HttpServletResponse) response).sendRedirect(linkDO.getOriginLink());
+                        }
+                    }
+                }
+            } finally {
+                lock.unlock();
+            }
         }
     }
 
