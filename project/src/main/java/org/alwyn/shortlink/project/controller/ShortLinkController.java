@@ -1,6 +1,8 @@
 package org.alwyn.shortlink.project.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.alwyn.shortlink.project.common.result.Result;
 import org.alwyn.shortlink.project.common.result.Results;
@@ -41,5 +43,8 @@ public class ShortLinkController {
         return Results.success();
     }
 
-
+    @GetMapping("/{suffix}")
+    public void redirectLink(@PathVariable("suffix") String suffix, ServletRequest request, ServletResponse response) {
+        linkService.redirectLink(suffix, request, response);
+    }
 }

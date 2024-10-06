@@ -8,12 +8,18 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import groovy.util.logging.Slf4j;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import org.alwyn.shortlink.project.common.enums.ValidDateTypeEnum;
 import org.alwyn.shortlink.project.common.exception.ServiceException;
 import org.alwyn.shortlink.project.common.util.HashUtil;
 import org.alwyn.shortlink.project.dao.entity.LinkDO;
+import org.alwyn.shortlink.project.dao.entity.LinkRouteDO;
 import org.alwyn.shortlink.project.dao.mapper.LinkMapper;
+import org.alwyn.shortlink.project.dao.mapper.LinkRouteMapper;
 import org.alwyn.shortlink.project.dto.req.LinkCreateReqDTO;
 import org.alwyn.shortlink.project.dto.req.LinkPageQueryReqDTO;
 import org.alwyn.shortlink.project.dto.req.LinkUpdateReqDTO;
@@ -39,12 +45,13 @@ import static org.alwyn.shortlink.project.common.error.ErrorResponse.*;
 public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements LinkService {
 
     private final RBloomFilter<String> shortLinkBloomFilter;
+    private final LinkRouteMapper linkRouteMapper;
 
     @Transactional(rollbackFor = Exception.class)
     @Override
     public LinkCreateRespDTO createShortLink(LinkCreateReqDTO requestParam) {
         String suffix = generateLinkSuffix(requestParam);
-        String fullShortLink = requestParam.getDomain() + "/" + suffix;
+        String fullShortLink = "https://" + requestParam.getDomain() + "/" + suffix;
 
         LinkDO linkDO = LinkDO.builder()
                 .domain(requestParam.getDomain())
@@ -57,12 +64,17 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
                 .enableStatus(1)
                 .build();
 
+        LinkRouteDO linkRouteDO = LinkRouteDO.builder()
+                .fullShortLink(fullShortLink)
+                .gid(requestParam.getGid())
+                .build();
         try {
             baseMapper.insert(linkDO);
+            linkRouteMapper.insert(linkRouteDO);
         } catch (DuplicateKeyException ex) {
             throw new ServiceException(LINK_EXISTS_ERROR);
         }
-        shortLinkBloomFilter.add(suffix);
+        shortLinkBloomFilter.add(fullShortLink);
         return LinkCreateRespDTO.builder()
                 .fullShortLink(fullShortLink)
                 .gid(linkDO.getGid())
@@ -126,6 +138,29 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
         baseMapper.update(linkDOToBeUpdated, updateWrapper);
     }
 
+    @SneakyThrows
+    @Override
+    public void redirectLink(String suffix, ServletRequest request, ServletResponse response) {
+        String serverName = request.getServerName();
+        String fullShortLink = "https://" + serverName + "/" + suffix;
+        LambdaQueryWrapper<LinkRouteDO> linkRouteDOLambdaQueryWrapper = Wrappers.lambdaQuery(LinkRouteDO.class)
+                .eq(LinkRouteDO::getFullShortLink, fullShortLink);
+        LinkRouteDO linkRouteDO = linkRouteMapper.selectOne(linkRouteDOLambdaQueryWrapper);
+        if (linkRouteDO == null) {
+            return;
+        }
+
+        LambdaQueryWrapper<LinkDO> linkDOLambdaQueryWrapper = Wrappers.lambdaQuery(LinkDO.class)
+                .eq(LinkDO::getGid, linkRouteDO.getGid())
+                .eq(LinkDO::getFullShortLink, fullShortLink)
+                .eq(LinkDO::getEnableStatus, 1)
+                .eq(LinkDO::getDelFlag, 0);
+        LinkDO linkDO = baseMapper.selectOne(linkDOLambdaQueryWrapper);
+        if (linkDO != null) {
+            ((HttpServletResponse) response).sendRedirect(linkDO.getOriginLink());
+        }
+    }
+
     private String generateLinkSuffix(LinkCreateReqDTO requestParam) {
         int maximumTryLimit = 10;
         String linkSuffix;
@@ -133,7 +168,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
             String originLink = requestParam.getOriginLink();
             originLink += UUID.randomUUID().toString();
             linkSuffix = HashUtil.hashToBase62(originLink);
-            String fullShortLink = requestParam.getDomain() + "/" + linkSuffix;
+            String fullShortLink = "https://" + requestParam.getDomain() + "/" + linkSuffix;
             if (!shortLinkBloomFilter.contains(fullShortLink)) {
                 return linkSuffix;
             }

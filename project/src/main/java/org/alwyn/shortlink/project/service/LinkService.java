@@ -3,6 +3,8 @@ package org.alwyn.shortlink.project.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import org.alwyn.shortlink.project.dao.entity.LinkDO;
 import org.alwyn.shortlink.project.dto.req.LinkCreateReqDTO;
 import org.alwyn.shortlink.project.dto.req.LinkPageQueryReqDTO;
@@ -21,4 +23,6 @@ public interface LinkService extends IService<LinkDO> {
     List<LinkCountQueryRespDTO> listLinkCount(List<String> requestParam);
 
     void updateLink(LinkUpdateReqDTO requestParam);
+
+    void redirectLink(String suffix, ServletRequest request, ServletResponse response);
 }
