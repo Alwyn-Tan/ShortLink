@@ -41,8 +41,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
-import static org.alwyn.shortlink.project.common.constant.RedisConstant.LINK_ROUTE_KEY;
-import static org.alwyn.shortlink.project.common.constant.RedisConstant.LOCK_LINK_ROUTE_KEY;
+import static org.alwyn.shortlink.project.common.constant.RedisConstant.*;
 import static org.alwyn.shortlink.project.common.error.ErrorResponse.*;
 
 @Slf4j
@@ -151,17 +150,26 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
     public void redirectLink(String suffix, ServletRequest request, ServletResponse response) {
         String serverName = request.getServerName();
         String fullShortLink = "https://" + serverName + "/" + suffix;
-        String originLink = stringRedisTemplate.opsForValue().get(String.format(LINK_ROUTE_KEY, suffix));
+        String originLink = stringRedisTemplate.opsForValue().get(String.format(LINK_ROUTE_KEY, fullShortLink));
         //Redis hit
         if (StrUtil.isNotBlank(originLink)) {
             ((HttpServletResponse) response).sendRedirect(originLink);
             return;
             //Redis miss
+            //Redis lock to prevent from Cache Breakdown
+        }
+
+        if (!shortLinkBloomFilter.contains(fullShortLink)) {
+            return;
+        }
+        String nullLink = stringRedisTemplate.opsForValue().get(String.format(NULL_LINK_KEY, fullShortLink));
+        if (StrUtil.isNotBlank(nullLink)) {
+            return;
         } else {
-            RLock lock = redissonClient.getLock(String.format(LOCK_LINK_ROUTE_KEY, suffix));
+            RLock lock = redissonClient.getLock(String.format(LOCK_LINK_ROUTE_KEY, fullShortLink));
             lock.lock();
             try {
-                originLink = stringRedisTemplate.opsForValue().get(String.format(LINK_ROUTE_KEY, suffix));
+                originLink = stringRedisTemplate.opsForValue().get(String.format(LINK_ROUTE_KEY, fullShortLink));
 
                 //Double check
                 if (StrUtil.isNotBlank(originLink)) {
@@ -181,7 +189,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
                                 .eq(LinkDO::getDelFlag, 0);
                         LinkDO linkDO = baseMapper.selectOne(linkDOLambdaQueryWrapper);
                         if (linkDO != null) {
-                            stringRedisTemplate.opsForValue().set(String.format(LINK_ROUTE_KEY, suffix), linkDO.getOriginLink());
+                            stringRedisTemplate.opsForValue().set(String.format(LINK_ROUTE_KEY, fullShortLink), linkDO.getOriginLink());
                             ((HttpServletResponse) response).sendRedirect(linkDO.getOriginLink());
                         }
                     }
