@@ -17,6 +17,7 @@ import lombok.SneakyThrows;
 import org.alwyn.shortlink.project.common.enums.ValidDateTypeEnum;
 import org.alwyn.shortlink.project.common.exception.ServiceException;
 import org.alwyn.shortlink.project.common.util.HashUtil;
+import org.alwyn.shortlink.project.common.util.LinkUtil;
 import org.alwyn.shortlink.project.dao.entity.LinkDO;
 import org.alwyn.shortlink.project.dao.entity.LinkRouteDO;
 import org.alwyn.shortlink.project.dao.mapper.LinkMapper;
@@ -40,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import static org.alwyn.shortlink.project.common.constant.RedisConstant.*;
 import static org.alwyn.shortlink.project.common.error.ErrorResponse.*;
@@ -81,7 +83,12 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
         } catch (DuplicateKeyException ex) {
             throw new ServiceException(LINK_EXISTS_ERROR);
         }
+        // Cache Warming
+        stringRedisTemplate.opsForValue().set(
+                fullShortLink, requestParam.getOriginLink(), LinkUtil.getLinkCacheValidTime(requestParam.getValidDate()), TimeUnit.MILLISECONDS
+        );
         shortLinkBloomFilter.add(fullShortLink);
+
         return LinkCreateRespDTO.builder()
                 .fullShortLink(fullShortLink)
                 .gid(linkDO.getGid())
