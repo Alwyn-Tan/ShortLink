@@ -25,4 +25,6 @@ public interface LinkService extends IService<LinkDO> {
     void updateLink(LinkUpdateReqDTO requestParam);
 
     void redirectLink(String suffix, ServletRequest request, ServletResponse response);
+
+    String getLinkTitle(String originalLink);
 }

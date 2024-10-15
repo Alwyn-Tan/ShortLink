@@ -13,5 +13,5 @@ spring:
       port: 6379
   mvc:
     view:
-      prefix: /template
+      prefix: /templates/
       suffix: .html

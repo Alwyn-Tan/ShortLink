@@ -29,6 +29,8 @@ import org.alwyn.shortlink.project.dto.resp.LinkCountQueryRespDTO;
 import org.alwyn.shortlink.project.dto.resp.LinkCreateRespDTO;
 import org.alwyn.shortlink.project.dto.resp.LinkPageQueryRespDTO;
 import org.alwyn.shortlink.project.service.LinkService;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.redisson.api.RBloomFilter;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
@@ -37,6 +39,8 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -57,7 +61,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
     @Override
     public LinkCreateRespDTO createShortLink(LinkCreateReqDTO requestParam) {
         String suffix = generateLinkSuffix(requestParam);
-        String fullShortLink = "https://" + requestParam.getDomain() + "/" + suffix;
+        String fullShortLink = "http://" + requestParam.getDomain() + ":8080/" + suffix;
 
         LinkDO linkDO = LinkDO.builder()
                 .domain(requestParam.getDomain())
@@ -154,7 +158,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
     @Override
     public void redirectLink(String suffix, ServletRequest request, ServletResponse response) {
         String serverName = request.getServerName();
-        String fullShortLink = "https://" + serverName + "/" + suffix;
+        String fullShortLink = "http://" + serverName + ":8080/" + suffix;
         String originLink = stringRedisTemplate.opsForValue().get(String.format(LINK_ROUTE_KEY, fullShortLink));
         //Redis hit
         if (StrUtil.isNotBlank(originLink)) {
@@ -163,12 +167,12 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
         }
         //Redis miss but bloom filter hit
         if (!shortLinkBloomFilter.contains(fullShortLink)) {
-            ((HttpServletResponse) response).sendRedirect("/api/short-link/project/link/notFound");
+            ((HttpServletResponse) response).sendRedirect("/link/missing");
             return;
         }
         String nullLink = stringRedisTemplate.opsForValue().get(String.format(NULL_LINK_KEY, fullShortLink));
         if (StrUtil.isNotBlank(nullLink)) {
-            ((HttpServletResponse) response).sendRedirect("/api/short-link/project/link/notFound");
+            ((HttpServletResponse) response).sendRedirect("/link/missing");
             return;
         } else {
             RLock lock = redissonClient.getLock(String.format(LOCK_LINK_ROUTE_KEY, fullShortLink));
@@ -188,7 +192,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
                     if (linkRouteDO == null) {
                         //Database miss
                         stringRedisTemplate.opsForValue().set(String.format(NULL_LINK_KEY, fullShortLink), "-", 30, TimeUnit.MINUTES);
-                        ((HttpServletResponse) response).sendRedirect("/api/short-link/project/link/notFound");
+                        ((HttpServletResponse) response).sendRedirect("/link/missing");
                         return;
                     } else {
                         LambdaQueryWrapper<LinkDO> linkDOLambdaQueryWrapper = Wrappers.lambdaQuery(LinkDO.class)
@@ -200,7 +204,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
                         if (linkDO.getValidDateType() != null && linkDO.getValidDate().before(new Date())) {
                             //Link Timeout
                             stringRedisTemplate.opsForValue().set(String.format(NULL_LINK_KEY, fullShortLink), "-", 30, TimeUnit.MINUTES);
-                            ((HttpServletResponse) response).sendRedirect("/api/short-link/project/link/notFound");
+                            ((HttpServletResponse) response).sendRedirect("/link/missing");
                             return;
                         }
                         stringRedisTemplate.opsForValue().set(
@@ -216,6 +220,21 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
         }
     }
 
+    @SneakyThrows
+    @Override
+    public String getLinkTitle(String originalLink) {
+        URL targetUrl = new URL(originalLink);
+        HttpURLConnection connection = (HttpURLConnection) targetUrl.openConnection();
+        connection.setRequestMethod("GET");
+        connection.connect();
+        if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
+            Document document = Jsoup.connect(originalLink).get();
+            return document.title();
+        } else {
+            return "Error while fetching title.";
+        }
+    }
+
     private String generateLinkSuffix(LinkCreateReqDTO requestParam) {
         int maximumTryLimit = 10;
         String linkSuffix;
@@ -223,7 +242,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
             String originLink = requestParam.getOriginLink();
             originLink += UUID.randomUUID().toString();
             linkSuffix = HashUtil.hashToBase62(originLink);
-            String fullShortLink = "https://" + requestParam.getDomain() + "/" + linkSuffix;
+            String fullShortLink = "http://" + requestParam.getDomain() + ":8080/" + linkSuffix;
             if (!shortLinkBloomFilter.contains(fullShortLink)) {
                 return linkSuffix;
             }

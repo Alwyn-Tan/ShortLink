@@ -43,13 +43,18 @@ public class ShortLinkController {
         return Results.success();
     }
 
-    @RequestMapping("/api/short-link/project/link/notFound")
+    @RequestMapping("/link/missing")
     public String linkNotFound() {
-        return "404";
+        return "notfound";
     }
 
     @GetMapping("/{suffix}")
     public void redirectLink(@PathVariable("suffix") String suffix, ServletRequest request, ServletResponse response) {
         linkService.redirectLink(suffix, request, response);
+    }
+
+    @GetMapping("/api/short-link/project/link/title")
+    public Result<String> getLinkTitle(@RequestParam("originalLink") String originalLink) {
+        return Results.success(linkService.getLinkTitle(originalLink));
     }
 }
