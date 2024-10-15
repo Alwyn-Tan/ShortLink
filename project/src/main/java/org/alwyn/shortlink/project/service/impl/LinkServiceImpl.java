@@ -37,10 +37,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static org.alwyn.shortlink.project.common.constant.RedisConstant.*;
@@ -85,7 +82,8 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
         }
         // Cache Warming
         stringRedisTemplate.opsForValue().set(
-                fullShortLink, requestParam.getOriginLink(), LinkUtil.getLinkCacheValidTime(requestParam.getValidDate()), TimeUnit.MILLISECONDS
+                String.format(LINK_ROUTE_KEY, fullShortLink), requestParam.getOriginLink(),
+                LinkUtil.getLinkCacheValidTime(requestParam.getValidDate()), TimeUnit.MILLISECONDS
         );
         shortLinkBloomFilter.add(fullShortLink);
 
@@ -196,7 +194,13 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
                                 .eq(LinkDO::getDelFlag, 0);
                         LinkDO linkDO = baseMapper.selectOne(linkDOLambdaQueryWrapper);
                         if (linkDO != null) {
-                            stringRedisTemplate.opsForValue().set(String.format(LINK_ROUTE_KEY, fullShortLink), linkDO.getOriginLink());
+                            if (linkDO.getValidDateType() != null && linkDO.getValidDate().before(new Date())) {
+                                stringRedisTemplate.opsForValue().set(String.format(NULL_LINK_KEY, fullShortLink), "-", 30, TimeUnit.MINUTES);
+                                return;
+                            }
+                            stringRedisTemplate.opsForValue().set(
+                                    String.format(LINK_ROUTE_KEY, fullShortLink), linkDO.getOriginLink(),
+                                    LinkUtil.getLinkCacheValidTime(linkDO.getValidDate()), TimeUnit.MILLISECONDS);
                             ((HttpServletResponse) response).sendRedirect(linkDO.getOriginLink());
                         }
                     }
