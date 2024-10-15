@@ -160,15 +160,15 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
         if (StrUtil.isNotBlank(originLink)) {
             ((HttpServletResponse) response).sendRedirect(originLink);
             return;
-            //Redis miss
-            //Redis lock to prevent from Cache Breakdown
         }
-
+        //Redis miss but bloom filter hit
         if (!shortLinkBloomFilter.contains(fullShortLink)) {
+            ((HttpServletResponse) response).sendRedirect("/api/short-link/project/link/notFound");
             return;
         }
         String nullLink = stringRedisTemplate.opsForValue().get(String.format(NULL_LINK_KEY, fullShortLink));
         if (StrUtil.isNotBlank(nullLink)) {
+            ((HttpServletResponse) response).sendRedirect("/api/short-link/project/link/notFound");
             return;
         } else {
             RLock lock = redissonClient.getLock(String.format(LOCK_LINK_ROUTE_KEY, fullShortLink));
@@ -181,10 +181,14 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
                     ((HttpServletResponse) response).sendRedirect(originLink);
                     return;
                 } else {
+                    //Redis miss
                     LambdaQueryWrapper<LinkRouteDO> linkRouteDOLambdaQueryWrapper = Wrappers.lambdaQuery(LinkRouteDO.class)
                             .eq(LinkRouteDO::getFullShortLink, fullShortLink);
                     LinkRouteDO linkRouteDO = linkRouteMapper.selectOne(linkRouteDOLambdaQueryWrapper);
                     if (linkRouteDO == null) {
+                        //Database miss
+                        stringRedisTemplate.opsForValue().set(String.format(NULL_LINK_KEY, fullShortLink), "-", 30, TimeUnit.MINUTES);
+                        ((HttpServletResponse) response).sendRedirect("/api/short-link/project/link/notFound");
                         return;
                     } else {
                         LambdaQueryWrapper<LinkDO> linkDOLambdaQueryWrapper = Wrappers.lambdaQuery(LinkDO.class)
@@ -193,16 +197,17 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
                                 .eq(LinkDO::getEnableStatus, 1)
                                 .eq(LinkDO::getDelFlag, 0);
                         LinkDO linkDO = baseMapper.selectOne(linkDOLambdaQueryWrapper);
-                        if (linkDO != null) {
-                            if (linkDO.getValidDateType() != null && linkDO.getValidDate().before(new Date())) {
-                                stringRedisTemplate.opsForValue().set(String.format(NULL_LINK_KEY, fullShortLink), "-", 30, TimeUnit.MINUTES);
-                                return;
-                            }
-                            stringRedisTemplate.opsForValue().set(
-                                    String.format(LINK_ROUTE_KEY, fullShortLink), linkDO.getOriginLink(),
-                                    LinkUtil.getLinkCacheValidTime(linkDO.getValidDate()), TimeUnit.MILLISECONDS);
-                            ((HttpServletResponse) response).sendRedirect(linkDO.getOriginLink());
+                        if (linkDO.getValidDateType() != null && linkDO.getValidDate().before(new Date())) {
+                            //Link Timeout
+                            stringRedisTemplate.opsForValue().set(String.format(NULL_LINK_KEY, fullShortLink), "-", 30, TimeUnit.MINUTES);
+                            ((HttpServletResponse) response).sendRedirect("/api/short-link/project/link/notFound");
+                            return;
                         }
+                        stringRedisTemplate.opsForValue().set(
+                                String.format(LINK_ROUTE_KEY, fullShortLink), linkDO.getOriginLink(),
+                                LinkUtil.getLinkCacheValidTime(linkDO.getValidDate()), TimeUnit.MILLISECONDS);
+                        ((HttpServletResponse) response).sendRedirect(linkDO.getOriginLink());
+
                     }
                 }
             } finally {
