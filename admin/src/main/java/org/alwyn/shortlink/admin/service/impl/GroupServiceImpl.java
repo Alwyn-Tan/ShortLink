@@ -55,7 +55,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
         }
         LambdaQueryWrapper<GroupDO> lamdaQueryWrapper = Wrappers.lambdaQuery(GroupDO.class)
                 .eq(GroupDO::getUsername, username)
-                .eq(GroupDO::getDelFlag, 1)
+                .eq(GroupDO::getDelFlag, 0)
                 .eq(GroupDO::getGroupname, groupname);
         if (baseMapper.selectCount(lamdaQueryWrapper) > 0) {
             GroupDO groupDORecreated = new GroupDO();
