@@ -5,8 +5,8 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import lombok.RequiredArgsConstructor;
 import org.alwyn.shortlink.project.common.result.Result;
 import org.alwyn.shortlink.project.common.result.Results;
-import org.alwyn.shortlink.project.dto.req.LinkPageQueryReqDTO;
 import org.alwyn.shortlink.project.dto.req.LinkReqDTO;
+import org.alwyn.shortlink.project.dto.req.RecycleBinPageQueryReqDTO;
 import org.alwyn.shortlink.project.dto.resp.LinkPageQueryRespDTO;
 import org.alwyn.shortlink.project.service.RecycleBinService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,7 +27,7 @@ public class RecycleBinController {
     }
 
     @GetMapping("api/short-link/project/recycle-bin/query")
-    public Result<IPage<LinkPageQueryRespDTO>> queryRecycleBinPage(LinkPageQueryReqDTO requestParam) {
+    public Result<IPage<LinkPageQueryRespDTO>> queryRecycleBinPage(RecycleBinPageQueryReqDTO requestParam) {
         return Results.success(recycleBinService.queryRecycleBinPage(requestParam));
     }
 

@@ -9,8 +9,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.alwyn.shortlink.project.dao.entity.LinkDO;
 import org.alwyn.shortlink.project.dao.mapper.LinkMapper;
-import org.alwyn.shortlink.project.dto.req.LinkPageQueryReqDTO;
 import org.alwyn.shortlink.project.dto.req.LinkReqDTO;
+import org.alwyn.shortlink.project.dto.req.RecycleBinPageQueryReqDTO;
 import org.alwyn.shortlink.project.dto.resp.LinkPageQueryRespDTO;
 import org.alwyn.shortlink.project.service.RecycleBinService;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -38,13 +38,17 @@ public class RecycleBinServiceImpl extends ServiceImpl<LinkMapper, LinkDO> imple
     }
 
     @Override
-    public IPage<LinkPageQueryRespDTO> queryRecycleBinPage(LinkPageQueryReqDTO requestParam) {
+    public IPage<LinkPageQueryRespDTO> queryRecycleBinPage(RecycleBinPageQueryReqDTO requestParam) {
         LambdaQueryWrapper<LinkDO> queryWrapper = Wrappers.lambdaQuery(LinkDO.class)
-                .eq(LinkDO::getGid, requestParam.getGid())
+                .in(LinkDO::getGid, requestParam.getGidList())
                 .eq(LinkDO::getEnableStatus, 0)
-                .eq(LinkDO::getDelFlag, 0);
+                .eq(LinkDO::getDelFlag, 0)
+                .orderByDesc(LinkDO::getUpdateTime);
         IPage<LinkDO> resultPage = baseMapper.selectPage(requestParam, queryWrapper);
-        return resultPage.convert(each -> BeanUtil.toBean(each, LinkPageQueryRespDTO.class));
+        return resultPage.convert(each -> {
+            LinkPageQueryRespDTO respDTO = BeanUtil.toBean(each, LinkPageQueryRespDTO.class);
+            return respDTO;
+        });
     }
 
     @Override
