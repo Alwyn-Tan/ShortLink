@@ -2,6 +2,8 @@ package org.alwyn.shortlink.project.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.lang.UUID;
+import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -12,6 +14,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import groovy.util.logging.Slf4j;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -37,6 +41,7 @@ import org.jsoup.nodes.Document;
 import org.redisson.api.RBloomFilter;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
+import org.springframework.boot.actuate.health.ReactiveHealthContributorRegistry;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -46,6 +51,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.alwyn.shortlink.project.common.constant.RedisConstant.*;
 import static org.alwyn.shortlink.project.common.error.ErrorResponse.*;
@@ -60,6 +66,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
     private final StringRedisTemplate stringRedisTemplate;
     private final RedissonClient redissonClient;
     private final AccessStatsMapper accessStatsMapper;
+    private final ReactiveHealthContributorRegistry reactiveHealthContributorRegistry;
 
     @Transactional(rollbackFor = Exception.class)
     @Override
@@ -258,7 +265,35 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
     }
 
     private void invokeAccessStats(String fullShortLink, String gid, ServletRequest request, ServletResponse response) {
+        AtomicBoolean uvFlag = new AtomicBoolean();
+        Cookie[] cookies = ((HttpServletRequest) request).getCookies();
         try {
+            Runnable addResposeCookieTask = () -> {
+                String uv = UUID.fastUUID().toString();
+                Cookie uvCookie = new Cookie("uv", uv);
+                uvCookie.setMaxAge(3600 * 24 * 30); // One month
+                uvCookie.setPath(StrUtil.sub(fullShortLink, fullShortLink.indexOf("/"), fullShortLink.length()));
+                ((HttpServletResponse) response).addCookie(uvCookie);
+                uvFlag.set(Boolean.TRUE);
+                stringRedisTemplate.opsForSet().add(STATS_UV_KEY + fullShortLink, uv);
+            };
+            if (ArrayUtil.isNotEmpty(cookies)) {
+                Arrays.stream(cookies)
+                        .filter(each -> Objects.equals(each.getName(), "uv"))
+                        .findFirst()
+                        .map(Cookie::getValue)
+                        .ifPresentOrElse(each -> {
+                            Long uvAdded = stringRedisTemplate.opsForSet().add(STATS_UV_KEY + fullShortLink, each);
+                            uvFlag.set(uvAdded != null && uvAdded > 0L);
+                        }, addResposeCookieTask);
+            } else {
+                addResposeCookieTask.run();
+            }
+
+            String remoteAddress = LinkUtil.getIpAddress((HttpServletRequest) request);
+            Long uipAdded = stringRedisTemplate.opsForSet().add(STATS_UV_KEY + fullShortLink, remoteAddress);
+            boolean uipFlag = uipAdded != null && uipAdded > 0L;
+
             Date date = new Date();
             int timeOfTheHour = DateUtil.hour(date, true);
             int dayOfTheWeek = DateUtil.dayOfWeekEnum(date).getIso8601Value();
@@ -268,8 +303,8 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
                     .gid(gid)
                     .date(date)
                     .pv(1)
-                    .uv(1)
-                    .uip(1)
+                    .uv(uvFlag.get() ? 1 : 0)
+                    .uip(uipFlag ? 1 : 0)
                     .timeOfTheHour(timeOfTheHour)
                     .dayOfTheWeek(dayOfTheWeek)
                     .build();
