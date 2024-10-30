@@ -1,6 +1,7 @@
 package org.alwyn.shortlink.project.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -18,8 +19,10 @@ import org.alwyn.shortlink.project.common.enums.ValidDateTypeEnum;
 import org.alwyn.shortlink.project.common.exception.ServiceException;
 import org.alwyn.shortlink.project.common.util.HashUtil;
 import org.alwyn.shortlink.project.common.util.LinkUtil;
+import org.alwyn.shortlink.project.dao.entity.AccessStatsDO;
 import org.alwyn.shortlink.project.dao.entity.LinkDO;
 import org.alwyn.shortlink.project.dao.entity.LinkRouteDO;
+import org.alwyn.shortlink.project.dao.mapper.AccessStatsMapper;
 import org.alwyn.shortlink.project.dao.mapper.LinkMapper;
 import org.alwyn.shortlink.project.dao.mapper.LinkRouteMapper;
 import org.alwyn.shortlink.project.dto.req.LinkCreateReqDTO;
@@ -56,6 +59,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
     private final LinkRouteMapper linkRouteMapper;
     private final StringRedisTemplate stringRedisTemplate;
     private final RedissonClient redissonClient;
+    private final AccessStatsMapper accessStatsMapper;
 
     @Transactional(rollbackFor = Exception.class)
     @Override
@@ -162,6 +166,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
         String originLink = stringRedisTemplate.opsForValue().get(String.format(LINK_ROUTE_KEY, fullShortLink));
         //Redis hit
         if (StrUtil.isNotBlank(originLink)) {
+            invokeAccessStats(fullShortLink, request.getParameter("gid"), request, response);
             ((HttpServletResponse) response).sendRedirect(originLink);
             return;
         }
@@ -182,6 +187,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
 
                 //Double check
                 if (StrUtil.isNotBlank(originLink)) {
+                    invokeAccessStats(fullShortLink, request.getParameter("gid"), request, response);
                     ((HttpServletResponse) response).sendRedirect(originLink);
                     return;
                 } else {
@@ -210,8 +216,8 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
                         stringRedisTemplate.opsForValue().set(
                                 String.format(LINK_ROUTE_KEY, fullShortLink), linkDO.getOriginLink(),
                                 LinkUtil.getLinkCacheValidTime(linkDO.getValidDate()), TimeUnit.MILLISECONDS);
+                        invokeAccessStats(fullShortLink, linkDO.getGid(), request, response);
                         ((HttpServletResponse) response).sendRedirect(linkDO.getOriginLink());
-
                     }
                 }
             } finally {
@@ -249,5 +255,27 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
             maximumTryLimit--;
         }
         throw new ServiceException(SERVICE_SYSTEM_TIMEOUT);
+    }
+
+    private void invokeAccessStats(String fullShortLink, String gid, ServletRequest request, ServletResponse response) {
+        try {
+            Date date = new Date();
+            int timeOfTheHour = DateUtil.hour(date, true);
+            int dayOfTheWeek = DateUtil.dayOfWeekEnum(date).getIso8601Value();
+
+            AccessStatsDO accessStatsDO = AccessStatsDO.builder()
+                    .fullShortLink(fullShortLink)
+                    .gid(gid)
+                    .date(date)
+                    .pv(1)
+                    .uv(1)
+                    .uip(1)
+                    .timeOfTheHour(timeOfTheHour)
+                    .dayOfTheWeek(dayOfTheWeek)
+                    .build();
+            accessStatsMapper.accessStatsInsert(accessStatsDO);
+        } catch (Throwable e) {
+            log.error("invokeAccessStats error", e);
+        }
     }
 }
