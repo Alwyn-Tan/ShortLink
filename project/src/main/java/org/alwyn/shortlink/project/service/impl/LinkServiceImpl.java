@@ -5,6 +5,9 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.http.HttpUtil;
+import cn.hutool.json.JSONObject;
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
@@ -21,11 +24,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.alwyn.shortlink.project.common.enums.ValidDateTypeEnum;
 import org.alwyn.shortlink.project.common.exception.ServiceException;
+import org.alwyn.shortlink.project.common.exception.TPSException;
 import org.alwyn.shortlink.project.common.util.HashUtil;
 import org.alwyn.shortlink.project.common.util.LinkUtil;
+import org.alwyn.shortlink.project.dao.entity.AccessLocationStatsDO;
 import org.alwyn.shortlink.project.dao.entity.AccessStatsDO;
 import org.alwyn.shortlink.project.dao.entity.LinkDO;
 import org.alwyn.shortlink.project.dao.entity.LinkRouteDO;
+import org.alwyn.shortlink.project.dao.mapper.AccessLocationStatsMapper;
 import org.alwyn.shortlink.project.dao.mapper.AccessStatsMapper;
 import org.alwyn.shortlink.project.dao.mapper.LinkMapper;
 import org.alwyn.shortlink.project.dao.mapper.LinkRouteMapper;
@@ -41,7 +47,7 @@ import org.jsoup.nodes.Document;
 import org.redisson.api.RBloomFilter;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
-import org.springframework.boot.actuate.health.ReactiveHealthContributorRegistry;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -53,6 +59,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.alwyn.shortlink.project.common.constant.LinkConstant.AMAP_API_URL;
 import static org.alwyn.shortlink.project.common.constant.RedisConstant.*;
 import static org.alwyn.shortlink.project.common.error.ErrorResponse.*;
 
@@ -66,7 +73,9 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
     private final StringRedisTemplate stringRedisTemplate;
     private final RedissonClient redissonClient;
     private final AccessStatsMapper accessStatsMapper;
-    private final ReactiveHealthContributorRegistry reactiveHealthContributorRegistry;
+    private final AccessLocationStatsMapper accessLocationStatsMapper;
+    @Value("${short-link.stats.location.amap-key}")
+    private String amapApiKey;
 
     @Transactional(rollbackFor = Exception.class)
     @Override
@@ -268,14 +277,14 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
         AtomicBoolean uvFlag = new AtomicBoolean();
         Cookie[] cookies = ((HttpServletRequest) request).getCookies();
         try {
-            Runnable addResposeCookieTask = () -> {
-                String uv = UUID.fastUUID().toString();
-                Cookie uvCookie = new Cookie("uv", uv);
+            Runnable addResponseCookieTask = () -> {
+                String UUIDCookie = UUID.fastUUID().toString();
+                Cookie uvCookie = new Cookie("uv", UUIDCookie);
                 uvCookie.setMaxAge(3600 * 24 * 30); // One month
-                uvCookie.setPath(StrUtil.sub(fullShortLink, fullShortLink.indexOf("/"), fullShortLink.length()));
+                uvCookie.setPath(StrUtil.subAfter(fullShortLink, "/", false));
                 ((HttpServletResponse) response).addCookie(uvCookie);
                 uvFlag.set(Boolean.TRUE);
-                stringRedisTemplate.opsForSet().add(STATS_UV_KEY + fullShortLink, uv);
+                stringRedisTemplate.opsForSet().add(STATS_UV_KEY + fullShortLink, UUIDCookie);
             };
             if (ArrayUtil.isNotEmpty(cookies)) {
                 Arrays.stream(cookies)
@@ -285,13 +294,13 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
                         .ifPresentOrElse(each -> {
                             Long uvAdded = stringRedisTemplate.opsForSet().add(STATS_UV_KEY + fullShortLink, each);
                             uvFlag.set(uvAdded != null && uvAdded > 0L);
-                        }, addResposeCookieTask);
+                        }, addResponseCookieTask);
             } else {
-                addResposeCookieTask.run();
+                addResponseCookieTask.run();
             }
 
             String remoteAddress = LinkUtil.getIpAddress((HttpServletRequest) request);
-            Long uipAdded = stringRedisTemplate.opsForSet().add(STATS_UV_KEY + fullShortLink, remoteAddress);
+            Long uipAdded = stringRedisTemplate.opsForSet().add(STATS_UIP_KEY + fullShortLink, remoteAddress);
             boolean uipFlag = uipAdded != null && uipAdded > 0L;
 
             Date date = new Date();
@@ -309,6 +318,28 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
                     .dayOfTheWeek(dayOfTheWeek)
                     .build();
             accessStatsMapper.accessStatsInsert(accessStatsDO);
+
+            //Add Access Location  Stats
+            Map<String, Object> accessLocationMap = new HashMap<>();
+            accessLocationMap.put("key", amapApiKey);
+            accessLocationMap.put("ip", remoteAddress);
+            String accessLocationResult = HttpUtil.get(AMAP_API_URL, accessLocationMap);
+            JSONObject accessLocationJson = JSONUtil.parseObj(accessLocationResult);
+            String infoCode = accessLocationJson.getStr("infocode");
+
+            if (StrUtil.isNotBlank(infoCode) && StrUtil.equals(infoCode, "10000")) {
+                AccessLocationStatsDO accessLocationStatsDO = AccessLocationStatsDO.builder()
+                        .fullShortLink(fullShortLink)
+                        .gid(gid)
+                        .date(date)
+                        .accessCount(1)
+                        .province(accessLocationJson.getStr("province"))
+                        .city(accessLocationJson.getStr("city"))
+                        .build();
+                accessLocationStatsMapper.insertAccessLocationStats(accessLocationStatsDO);
+            } else {
+                throw new TPSException(AMAP_ERROR);
+            }
         } catch (Throwable e) {
             log.error("invokeAccessStats error", e);
         }

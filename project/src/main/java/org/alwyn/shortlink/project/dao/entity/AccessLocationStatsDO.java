@@ -13,11 +13,11 @@ import java.util.Date;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AccessLocationStats extends BaseDO {
+public class AccessLocationStatsDO extends BaseDO {
 
     private Long id;
 
-    private String fullShortUrl;
+    private String fullShortLink;
 
     private String gid;
 
@@ -28,5 +28,5 @@ public class AccessLocationStats extends BaseDO {
     private String province;
 
     private String city;
-    
+
 }

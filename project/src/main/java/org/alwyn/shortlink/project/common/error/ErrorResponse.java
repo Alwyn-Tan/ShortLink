@@ -14,8 +14,8 @@ public enum ErrorResponse {
     LINK_NOT_EXIST_ERROR("A000302", "Link Not Exist Error"),
     SERVICE_ERROR("B000001", "Service Error"),
     SERVICE_SYSTEM_TIMEOUT("B000100", "System Timeout"),
-    REMOTE_ERROR("C000001", "Third Party Service Error");
-
+    REMOTE_ERROR("C000001", "Third Party Service Error"),
+    AMAP_ERROR("C000100", "AMAP API Error");
     private final String code;
 
     private final String message;
