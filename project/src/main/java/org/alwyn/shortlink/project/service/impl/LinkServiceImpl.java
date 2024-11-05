@@ -299,8 +299,8 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
                 addResponseCookieTask.run();
             }
 
-            String remoteAddress = LinkUtil.getIpAddress((HttpServletRequest) request);
-            Long uipAdded = stringRedisTemplate.opsForSet().add(STATS_UIP_KEY + fullShortLink, remoteAddress);
+            String ipAddress = LinkUtil.getIpAddress((HttpServletRequest) request);
+            Long uipAdded = stringRedisTemplate.opsForSet().add(STATS_UIP_KEY + fullShortLink, ipAddress);
             boolean uipFlag = uipAdded != null && uipAdded > 0L;
 
             Date date = new Date();
@@ -322,7 +322,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
             //Add Access Location  Stats
             Map<String, Object> accessLocationMap = new HashMap<>();
             accessLocationMap.put("key", amapApiKey);
-            accessLocationMap.put("ip", remoteAddress);
+            accessLocationMap.put("ip", ipAddress);
             String accessLocationResult = HttpUtil.get(AMAP_API_URL, accessLocationMap);
             JSONObject accessLocationJson = JSONUtil.parseObj(accessLocationResult);
             String infoCode = accessLocationJson.getStr("infocode");
@@ -335,6 +335,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
                         .accessCount(1)
                         .province(accessLocationJson.getStr("province"))
                         .city(accessLocationJson.getStr("city"))
+                        .ipAddress(ipAddress)
                         .build();
                 accessLocationStatsMapper.insertAccessLocationStats(accessLocationStatsDO);
             } else {

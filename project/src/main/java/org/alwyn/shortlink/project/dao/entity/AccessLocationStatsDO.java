@@ -29,4 +29,6 @@ public class AccessLocationStatsDO extends BaseDO {
 
     private String city;
 
+    private String ipAddress;
+
 }
