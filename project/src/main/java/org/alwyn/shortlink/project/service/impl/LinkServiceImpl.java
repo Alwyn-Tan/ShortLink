@@ -182,7 +182,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
         String originLink = stringRedisTemplate.opsForValue().get(String.format(LINK_ROUTE_KEY, fullShortLink));
         //Redis hit
         if (StrUtil.isNotBlank(originLink)) {
-            invokeAccessStats(fullShortLink, request.getParameter("gid"), request, response);
+            invokeAccessStats(fullShortLink, null, request, response);
             ((HttpServletResponse) response).sendRedirect(originLink);
             return;
         }
@@ -203,7 +203,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
 
                 //Double check
                 if (StrUtil.isNotBlank(originLink)) {
-                    invokeAccessStats(fullShortLink, request.getParameter("gid"), request, response);
+                    invokeAccessStats(fullShortLink, null, request, response);
                     ((HttpServletResponse) response).sendRedirect(originLink);
                     return;
                 } else {
@@ -303,6 +303,13 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
             Long uipAdded = stringRedisTemplate.opsForSet().add(STATS_UIP_KEY + fullShortLink, ipAddress);
             boolean uipFlag = uipAdded != null && uipAdded > 0L;
 
+            if (StrUtil.isBlank(gid)) {
+                LambdaQueryWrapper<LinkRouteDO> linkRouteDOLambdaQueryWrapper = Wrappers.lambdaQuery(LinkRouteDO.class)
+                        .eq(LinkRouteDO::getFullShortLink, fullShortLink);
+                LinkRouteDO linkRouteDO = linkRouteMapper.selectOne(linkRouteDOLambdaQueryWrapper);
+                gid = linkRouteDO.getGid();
+            }
+
             Date date = new Date();
             int timeOfTheHour = DateUtil.hour(date, true);
             int dayOfTheWeek = DateUtil.dayOfWeekEnum(date).getIso8601Value();
@@ -334,7 +341,6 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
                         .date(date)
                         .accessCount(1)
                         .province(accessLocationJson.getStr("province"))
-                        .city(accessLocationJson.getStr("city"))
                         .ipAddress(ipAddress)
                         .build();
                 accessLocationStatsMapper.insertAccessLocationStats(accessLocationStatsDO);
