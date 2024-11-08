@@ -311,7 +311,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
             }
 
             Date date = new Date();
-            int timeOfTheHour = DateUtil.hour(date, true);
+            int timeOfTheDay = DateUtil.hour(date, true);
             int dayOfTheWeek = DateUtil.dayOfWeekEnum(date).getIso8601Value();
 
             AccessStatsDO accessStatsDO = AccessStatsDO.builder()
@@ -321,7 +321,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
                     .pv(1)
                     .uv(uvFlag.get() ? 1 : 0)
                     .uip(uipFlag ? 1 : 0)
-                    .timeOfTheHour(timeOfTheHour)
+                    .timeOfTheDay(timeOfTheDay)
                     .dayOfTheWeek(dayOfTheWeek)
                     .build();
             accessStatsMapper.accessStatsInsert(accessStatsDO);

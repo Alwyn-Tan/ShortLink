@@ -2,6 +2,7 @@ package org.alwyn.shortlink.project.dao.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.alwyn.shortlink.project.dao.entity.AccessLocationStatsDO;
+import org.alwyn.shortlink.project.dto.resp.LinkAccessStats.TopAccessIpStatsRespDTO;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -23,4 +24,11 @@ public interface AccessLocationStatsMapper extends BaseMapper<AccessLocationStat
             "WHERE full_short_link = #{fullShortLink}",
     })
     List<AccessLocationStatsDO> listAccessLocationStats(@Param("fullShortLink") String fullShortLink);
+
+    @Select({
+            "SELECT ip_address, SUM(access_count) AS access_count",
+            "FROM access_location_stats_0",
+            "WHERE full_short_link = #{fullShortLink}",
+    })
+    List<TopAccessIpStatsRespDTO> listTopAccessIpStats(@Param("fullShortLink") String fullShortLink);
 }

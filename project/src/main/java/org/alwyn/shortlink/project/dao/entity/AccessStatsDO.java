@@ -28,7 +28,7 @@ public class AccessStatsDO extends BaseDO {
 
     private Integer uip;
 
-    private Integer timeOfTheHour;
+    private Integer timeOfTheDay;
 
     private Integer dayOfTheWeek;
 
