@@ -4,6 +4,6 @@ import lombok.Data;
 
 @Data
 public class TopAccessIpStatsRespDTO {
-    private Integer ipAccessCount;
     private String ipAddress;
+    private Integer ipAccessCount;
 }

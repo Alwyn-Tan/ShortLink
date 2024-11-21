@@ -26,7 +26,7 @@ public interface AccessLocationStatsMapper extends BaseMapper<AccessLocationStat
     List<AccessLocationStatsDO> listAccessLocationStats(@Param("fullShortLink") String fullShortLink);
 
     @Select({
-            "SELECT ip_address, SUM(access_count) AS access_count",
+            "SELECT ip_address, SUM(access_count) AS ip_access_count",
             "FROM access_location_stats_0",
             "WHERE full_short_link = #{fullShortLink}",
     })

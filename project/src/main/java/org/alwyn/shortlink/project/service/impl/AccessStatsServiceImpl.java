@@ -1,8 +1,11 @@
 package org.alwyn.shortlink.project.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.date.DateField;
+import cn.hutool.core.date.DateUtil;
 import lombok.RequiredArgsConstructor;
 import org.alwyn.shortlink.project.dao.entity.AccessLocationStatsDO;
+import org.alwyn.shortlink.project.dao.entity.AccessStatsDO;
 import org.alwyn.shortlink.project.dao.mapper.AccessLocationStatsMapper;
 import org.alwyn.shortlink.project.dao.mapper.AccessStatsMapper;
 import org.alwyn.shortlink.project.dto.req.AccessStatsReqDTO;
@@ -12,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
@@ -22,10 +26,40 @@ public class AccessStatsServiceImpl implements AccessStatsService {
 
     @Override
     public AccessStatsRespDTO getLinkAccessStats(AccessStatsReqDTO requestParam) {
-        List<DailyAccessStatsRespDTO> dailyAccessStatsDOList = accessStatsMapper.listAccessStatsPerDay(requestParam);
-        if (CollUtil.isEmpty(dailyAccessStatsDOList)) {
+        List<AccessStatsDO> accessStatsDOList = accessStatsMapper.listAccessStatsDO(requestParam);
+        if (CollUtil.isEmpty(accessStatsDOList)) {
             return null;
         }
+        int totalPv = 0, totalUv = 0, totalUip = 0;
+        for (AccessStatsDO item : accessStatsDOList) {
+            totalPv += item.getPv();
+            totalUv += item.getUv();
+            totalUip += item.getUip();
+        }
+        List<DailyAccessStatsRespDTO> dailyAccessStatsList = new ArrayList<>();
+        List<String> dateList = DateUtil.rangeToList(DateUtil.parse(requestParam.getStartDate()), DateUtil.parse(requestParam.getEndDate()), DateField.DAY_OF_MONTH).stream()
+                .map(DateUtil::formatDate)
+                .toList();
+        dateList.forEach(each -> accessStatsDOList.stream()
+                .filter(item -> Objects.equals(each, DateUtil.formatDate(item.getDate())))
+                .findFirst()
+                .ifPresentOrElse(item -> {
+                    DailyAccessStatsRespDTO respDTO = DailyAccessStatsRespDTO.builder()
+                            .date(each)
+                            .pv(item.getPv())
+                            .uv(item.getUv())
+                            .uip(item.getUip())
+                            .build();
+                    dailyAccessStatsList.add(respDTO);
+                }, () -> {
+                    DailyAccessStatsRespDTO respDTO = DailyAccessStatsRespDTO.builder()
+                            .date(each)
+                            .pv(0)
+                            .uv(0)
+                            .uip(0)
+                            .build();
+                    dailyAccessStatsList.add(respDTO);
+                }));
 
         List<Integer> timeOfTheDayAcessStatsList = timeOfTheDayAccessStatsList(requestParam);
         List<Integer> dayOfTheWeekAccessStatsList = dayOfTheWeekAccessStatsList(requestParam);
@@ -35,10 +69,13 @@ public class AccessStatsServiceImpl implements AccessStatsService {
         return AccessStatsRespDTO.builder()
                 .fullShortLink(requestParam.getFullShortLink())
                 .gid(requestParam.getGid())
-                .dailyAccessStats(dailyAccessStatsDOList)
+                .totalPv(totalPv)
+                .totalUv(totalUv)
+                .totalUip(totalUip)
+                .dailyAccessStats(dailyAccessStatsList)
                 .timeOfTheDayAccessStats(timeOfTheDayAcessStatsList)
                 .dayOfTheWeekAccessStats(dayOfTheWeekAccessStatsList)
-                .accessLocationStats(getAccessLocationStatsList(requestParam.getFullShortLink()))
+                .accessLocationStats(accessLocationStatsList)
                 .topAccessIpStats(topAccessIpStatsList)
                 .build();
     }
