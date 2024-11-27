@@ -5,12 +5,15 @@ import { ElMessage } from 'element-plus'
 import { isNotEmpty } from '@/utils/plugins.js'
 
 // const baseURL = '/resourcesharing/organizational'
-const baseURL = '/api/short-link/admin/v1'
+const BASE_URL = '/api/short-link/admin/v1';
+const TIMEOUT = 15000;
+const LOGIN_FAILED_CODE = 'A000200';
+const USER_TOKEN_INVALID_CODE = 'A000210';
 // 创建实例
 const http = axios.create({
   // api 代理为服务器请求地址
-  baseURL: '/api' + baseURL,
-  timeout: 15000
+  baseURL: '/api' + BASE_URL,
+  timeout: TIMEOUT
 })
 // 请求拦截 -->在请求发送之前做一些事情
 http.interceptors.request.use(
@@ -28,7 +31,7 @@ http.interceptors.request.use(
 http.interceptors.response.use(
   (res) => {
     // 如果返回的code为 A000200代表登录过期或者没登录，将localStorage中的token清空
-    if (res.data.code === ' A000200') {
+    if (res.data.code === LOGIN_FAILED_CODE || res.data.code === USER_TOKEN_INVALID_CODE) {
       localStorage.removeItem('token')
     }
     if (res.status == 0 || res.status == 200) {

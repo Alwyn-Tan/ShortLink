@@ -1,66 +1,67 @@
 <template>
   <div class="login-page">
-    <h1 class="title">短 链 接 平 台</h1>
+    <h1 class="title">SHORT-LINK-PLATFORM</h1>
     <div class="login-box">
-      <!-- 登录 -->
+      <!-- login -->
       <div class="logon" :class="{ hidden: !isLogin }">
-        <h2>用户登录</h2>
+        <h2>Login</h2>
         <el-form ref="loginFormRef1" :model="loginForm" label-width="50px" :rules="loginFormRule">
           <div class="form-container1">
             <el-form-item prop="phone">
-              <el-input v-model="loginForm.username" placeholder="请输入用户名" maxlength="11" show-word-limit clearable>
-                <template v-slot:prepend> 用户名 </template>
+              <el-input v-model="loginForm.username" maxlength="11" show-word-limit clearable>
+                <template v-slot:prepend>
+                <div class="prepend-container">User Name</div>
+                </template>
               </el-input>
             </el-form-item>
 
             <el-form-item prop="password">
-              <el-input v-model="loginForm.password" type="password" clearable placeholder="请输入密码" show-password
+              <el-input v-model="loginForm.password" type="password" clearable show-password
                 style="margin-top: 20px">
-                <template v-slot:prepend> 密<span class="second-font">码</span> </template>
+                <template v-slot:prepend>
+                <div class="prepend-container">Password</div>
+                </template>
               </el-input>
             </el-form-item>
           </div>
           <div class="btn-gourp">
             <div>
               <el-checkbox class="remeber-password" v-model="checked"
-                style="color: #a0a0a0; margin: 0 0 0px 0">记住密码</el-checkbox>
+                style="color: #a0a0a0; margin: 0 0 0px 0">Remember Password</el-checkbox>
             </div>
             <div>
               <el-button :loading="loading" @keyup.enter="login" type="primary" plain
-                @click="login(loginFormRef1)">登录</el-button>
+                @click="login(loginFormRef1)">Login</el-button>
             </div>
           </div>
         </el-form>
       </div>
-      <!-- 注册 -->
-      <div class="register" :class="{ hidden: isLogin }">
-        <h2>用户注册</h2>
-        <el-form ref="loginFormRef2" :model="addForm" label-width="50px" class="form-container" width="width"
+      <!-- register -->
+      <div class="signup" :class="{ hidden: isLogin }">
+        <h2>Sign up</h2>
+        <el-form ref="loginFormRef2" :model="addForm" label-width="100px" class="form-container" width="width"
           :rules="addFormRule">
           <el-form-item prop="username">
-            <el-input v-model="addForm.username" placeholder="请输入用户名" maxlength="11" show-word-limit clearable>
-              <template v-slot:prepend> 用户名 </template>
+            <el-input v-model="addForm.username" maxlength="11" show-word-limit clearable>
+              <template v-slot:prepend >
+                <div class="prepend-container">User Name</div> 
+              </template>
             </el-input>
           </el-form-item>
           <el-form-item prop="mail">
-            <el-input v-model="addForm.mail" placeholder="请输入邮箱" show-word-limit clearable>
-              <template v-slot:prepend> 邮<span class="second-font">箱</span> </template>
+            <el-input v-model="addForm.mail" show-word-limit clearable>
+              <template v-slot:prepend> <div class="prepend-container">Email Address</div> </template>
             </el-input>
           </el-form-item>
           <el-form-item prop="phone">
-            <el-input v-model="addForm.phone" placeholder="请输入手机号" show-word-limit clearable>
-              <template v-slot:prepend> 手机号 </template>
-            </el-input>
-          </el-form-item>
-          <el-form-item prop="realName">
-            <el-input v-model="addForm.realName" placeholder="请输入姓名" show-word-limit clearable>
-              <template v-slot:prepend> 姓<span class="second-font">名</span> </template>
+            <el-input v-model="addForm.phone" show-word-limit clearable>
+              <template v-slot:prepend> <div class="prepend-container">Phone Number</div> </template>
             </el-input>
           </el-form-item>
 
           <el-form-item prop="password">
-            <el-input v-model="addForm.password" type="password" clearable placeholder="请输入密码" show-password>
-              <template v-slot:prepend> 密<span class="second-font">码</span> </template>
+            <el-input v-model="addForm.password" type="password" clearable show-password>
+              <template v-slot:prepend> <div class="prepend-container">Password</div> </template>
             </el-input>
           </el-form-item>
           <!-- 验证码 -->
@@ -82,26 +83,31 @@
             <div></div>
             <div>
               <el-button :loading="loading" @keyup.enter="login" type="primary" plain
-                @click="addUser(loginFormRef2)">注册</el-button>
+                @click="addUser(loginFormRef2)">Register as a user</el-button>
             </div>
           </div>
         </el-form>
       </div>
-      <!-- 左右移动的切换按钮 -->
+      <!-- move -->
       <div class="move" ref="moveRef">
         <span style="font-size: 18px; margin-bottom: 25px; color: rgb(225, 238, 250)">{{
-          !isLogin ? '已有账号？' : '还没有账号？'
+          !isLogin ? 'Already have an account？' : 'Don\'t have an account？'
         }}</span>
         <span style="font-size: 16px; color: rgb(225, 238, 250)">{{
-          !isLogin ? '欢迎登录账号！' : '欢迎注册账号！'
+          !isLogin ? 'Login now!' : 'Sign up and use！'
         }}</span>
         <el-button style="width: 100px; margin-top: 30px" @click="changeLogin">{{
-          !isLogin ? '去登录' : '去注册'
+          !isLogin ? 'Login' : 'Sign Up'
         }}</el-button>
       </div>
     </div>
     <div ref="vantaRef" class="vanta"></div>
   </div>
+
+
+
+
+
   <el-dialog v-model="isWC" title="人机验证" width="40%" :before-close="handleClose">
     <div class="verification-flex">
       <span>扫码下方二维码，关注后回复：短链接，获取拿个offer-12306在线购票系统人机验证码</span>
@@ -376,6 +382,12 @@ const changeLogin = () => {
   .el-form-item {
     margin-bottom: 23px;
   }
+
+  .prepend-container {
+    display: flex;
+    justify-content: center;
+    width: 80px; /* 根据需要调整固定宽度 */
+}
 
   .btn-gourp {
     margin-top: 30px;

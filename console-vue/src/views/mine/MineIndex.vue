@@ -179,7 +179,7 @@ const changeUserInfo = (formEl) => {
   padding: 20px;
 }
 
-.register {
+.signup {
   padding-right: 30px;
 }
 
