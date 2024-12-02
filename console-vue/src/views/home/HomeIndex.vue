@@ -3,11 +3,8 @@
     <el-container>
       <el-header height="50px" style="padding: 0">
         <div class="header">
-          <div @click="toMySpace" class="logo">拿个offer-SaaS短链接</div>
+          <div @click="toMySpace" class="logo">Short-link Generator</div>
           <div style="display: flex; align-items: center">
-            <span class="link-span">文档</span>
-            <span class="link-span">博客</span>
-            <span class="link-span">社区</span>
             <el-dropdown>
               <div class="block">
                 <el-avatar :size="30" class="avatar" :style="`background:${extractColorByName(firstName)}`">{{ firstName }}

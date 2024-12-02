@@ -39,51 +39,36 @@
       <!-- register -->
       <div class="signup" :class="{ hidden: isLogin }">
         <h2>Sign up</h2>
-        <el-form ref="loginFormRef2" :model="addForm" label-width="100px" class="form-container" width="width"
-          :rules="addFormRule">
+        <el-form ref="loginFormRef2" :model="userSignUpForm" label-width="100px" class="form-container" width="width"
+                 :rules="addFormRule">
           <el-form-item prop="username">
-            <el-input v-model="addForm.username" maxlength="11" show-word-limit clearable>
+            <el-input v-model="userSignUpForm.username" maxlength="11" show-word-limit clearable>
               <template v-slot:prepend >
                 <div class="prepend-container">User Name</div> 
               </template>
             </el-input>
           </el-form-item>
           <el-form-item prop="mail">
-            <el-input v-model="addForm.mail" show-word-limit clearable>
+            <el-input v-model="userSignUpForm.mail" show-word-limit clearable>
               <template v-slot:prepend> <div class="prepend-container">Email Address</div> </template>
             </el-input>
           </el-form-item>
           <el-form-item prop="phone">
-            <el-input v-model="addForm.phone" show-word-limit clearable>
+            <el-input v-model="userSignUpForm.phone" show-word-limit clearable>
               <template v-slot:prepend> <div class="prepend-container">Phone Number</div> </template>
             </el-input>
           </el-form-item>
 
           <el-form-item prop="password">
-            <el-input v-model="addForm.password" type="password" clearable show-password>
+            <el-input v-model="userSignUpForm.password" type="password" clearable show-password>
               <template v-slot:prepend> <div class="prepend-container">Password</div> </template>
             </el-input>
           </el-form-item>
-          <!-- 验证码 -->
-          <!-- <el-form-item prop="vertify_code">
-            <el-input
-              v-model="loginForm.vertify_code"
-              placeholder="验证码"
-              prefix-icon="el-icon-key"
-              clearable
-            >
-              <template v-slot:append>
-                <div class="login-code" @click="refreshCode" title="看不清？点击切换">
-                  <vertify-code :identifyCode="loginIdentifyCode"></vertify-code>
-                </div>
-              </template>
-            </el-input>
-          </el-form-item> -->
           <div class="btn-gourp">
             <div></div>
             <div>
-              <el-button :loading="loading" @keyup.enter="login" type="primary" plain
-                @click="addUser(loginFormRef2)">Register as a user</el-button>
+              <el-button :loading="loading" @keyup.enter="login" type="primary" plain style="width:auto; padding:0 10px;"
+                @click="userRegistration(loginFormRef2)">Register and login</el-button>
             </div>
           </div>
         </el-form>
@@ -103,31 +88,6 @@
     </div>
     <div ref="vantaRef" class="vanta"></div>
   </div>
-
-
-
-
-
-  <el-dialog v-model="isWC" title="人机验证" width="40%" :before-close="handleClose">
-    <div class="verification-flex">
-      <span>扫码下方二维码，关注后回复：短链接，获取拿个offer-12306在线购票系统人机验证码</span>
-      <img class="img" src="@/assets/png/公众号二维码.png" alt="">
-      <el-form class="form" :model="verification" :rules="verificationRule" ref="verificationRef">
-        <el-form-item prop="code" label="验证码">
-          <el-input v-model="verification.code" />
-        </el-form-item>
-      </el-form>
-    </div>
-    <template #footer>
-      <span class="dialog-footer">
-        <el-button @click="isWC = false">取消</el-button>
-        <el-button type="primary" @click="verificationLogin(verificationRef)">
-          确认
-        </el-button>
-      </span>
-    </template>
-  </el-dialog>
-  <!-- </template> -->
 </template>
 
 <script setup>
@@ -146,140 +106,97 @@ const loginForm = reactive({
   username: '',
   password: '',
 })
-const addForm = reactive({
+const userSignUpForm = reactive({
   username: '',
   password: '',
-  realName: '',
   phone: '',
   mail: ''
 })
 
 const addFormRule = reactive({
   phone: [
-    { required: true, message: '请输入手机号', trigger: 'blur' },
+    { required: true, message: 'Please enter your phone number', trigger: 'blur' },
     {
       pattern: /^1[3|5|7|8|9]\d{9}$/,
-      message: '请输入正确的手机号',
+      message: 'Please enter a valid phone number',
       trigger: 'blur'
     },
-    { min: 11, max: 11, message: '手机号必须是11位', trigger: 'blur' }
+    { min: 11, max: 11, message: 'Phone number length must be 11', trigger: 'blur' }
   ],
-  username: [{ required: true, message: '请输入您的真实姓名', trigger: 'blur' }],
+  username: [{ required: true, message: 'Please enter your name', trigger: 'blur' }],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 8, max: 15, message: '密码长度请在八位以上', trigger: 'blur' }
+    { required: true, message: 'Please enter the password', trigger: 'blur' },
+    { min: 8, max: 15, message: 'Password length should be no less than 8', trigger: 'blur' }
   ],
   mail: [
-    { required: true, message: '请输入邮箱', trigger: 'blur' },
+    { required: true, message: 'Please enter your email', trigger: 'blur' },
     {
       pattern: /^([a-zA-Z]|[0-9])(\w|\-)+@[a-zA-Z0-9]+\.([a-zA-Z]{2,4})$/,
-      message: '请输入正确的邮箱号',
+      message: 'Please enter a valid email address',
       trigger: 'blur'
     }
   ],
-  realNamee: [
-    { required: true, message: '请输姓名', trigger: 'blur' },
-  ]
 })
 const loginFormRule = reactive({
-  username: [{ required: true, message: '请输入您的真实姓名', trigger: 'blur' }],
+  username: [{ required: true, message: 'please enter the username', trigger: 'blur' }],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 8, max: 15, message: '密码长度请在八位以上', trigger: 'blur' }
+    { required: true, message: 'Please enter your password', trigger: 'blur' },
+    { min: 8, max: 15, message: 'Password length must be between 8 and 15 characters', trigger: 'blur' }
   ],
 })
 // 注册
-const addUser = (formEl) => {
+const userRegistration = (formEl) => {
   if (!formEl) return
   formEl.validate(async (valid) => {
     if (valid) {
-      // 检测用户名是否已经存在
-      const res1 = await API.user.hasUsername({ username: addForm.username })
-      if (res1.data.success !== false) {
-        // 注册
-        const res2 = await API.user.addUser(addForm)
-        // console.log(res2)
+      try {
+        // Check username existence
+        const res1 = await API.user.hasUsername({username: userSignUpForm.username})
+        if (res1.data.success === false) {
+          ElMessage.warning('Username already exists!')
+          return
+        }
+
+        //register new user but failed
+        const res2 = await API.user.register(userSignUpForm)
         if (res2.data.success === false) {
           ElMessage.warning(res2.data.message)
-        } else {
-          const res3 = await API.user.login({ username: addForm.username, password: addForm.password })
-          const token = res3?.data?.data?.token
-          // 将username和token保存到cookies中和localStorage中
-          if (token) {
-            setToken(token)
-            setUsername(addForm.username)
-            localStorage.setItem('token', token)
-            localStorage.setItem('username', addForm.username)
-          }
-          ElMessage.success('注册登录成功！')
-          router.push('/home')
+          return
         }
-      } else {
-        ElMessage.warning('用户名已存在！')
+
+        //successfully registered and login
+        const res3 = await API.user.login(userSignUpForm.username, userSignUpForm.password)
+        const token = res3?.data?.data?.token
+        if (token) {
+          setToken(token)
+          setUsername(userSignUpForm.username)
+          localStorage.setItem('token', token)
+          localStorage.setItem('username', userSignUpForm.username)
+          ElMessage.success("Successfully Registered!")
+          router.push('/home')
+        } else {
+          ElMessage.error('Failed to get token after registration!')
+        }
+      } catch (error) {
+        console.error("error during registration:", error)
+        ElMessage.error(error.message)
       }
     } else {
+      ElMessage.warning('Please fill in all required fields correctly.')
       return false
     }
   })
 
 }
-// 公众号验证码
-const isWC = ref(false)
-const verificationRef = ref()
-const verification = reactive({
-  code: ''
-})
-const verificationRule = reactive({
-  code: [{ required: true, message: '请输入验证码', trigger: 'blur' }]
-})
-const verificationLogin = (formEl) => {
-  if (!formEl) return
-  formEl.validate(async (valid) => {
-    if (valid) {
-      const tempPassword = loginForm.password
-      loginForm.password = verification.code
-      const res1 = await API.user.login(loginForm)
-      if (res1.data.code === '0') {
-        const token = res1?.data?.data?.token
-        // 将username和token保存到cookies中和localStorage中
-        if (token) {
-          setToken(token)
-          setUsername(loginForm.username)
-          localStorage.setItem('token', token)
-          localStorage.setItem('username', loginForm.username)
-        }
-        ElMessage.success('登录成功！')
-        router.push('/home')
-      } else if (res1.data.message === '用户已登录') {
-        // 如果已经登录了，判断一下浏览器保存的登录信息是不是再次登录的信息，如果是就正常登录
-        const cookiesUsername = getUsername()
-        if (cookiesUsername === loginForm.username) {
-          ElMessage.success('登录成功！')
-          router.push('/home')
-        } else {
-          ElMessage.warning('用户已在别处登录，请勿重复登录！')
-        }
-      } else {
-        ElMessage.error('请输入正确的验证码!')
-      }
-      loginForm.password = tempPassword
-    }
-  })
-}
+
 // 登录
 const login = (formEl) => {
   if (!formEl) return
   formEl.validate(async (valid) => {
     if (valid) {
-      // 当域名为下面这两个时，弹出公众号弹框
-      let domain = window.location.host
-      if (domain === 'shortlink.magestack.cn' || domain === 'shortlink.nageoffer.com') {
-        isWC.value = true
-        return
-      }
       const res1 = await API.user.login(loginForm)
-      if (res1.data.code === '0') {
-        const token = res1?.data?.data?.token
+      if (res1.data.code === '0000000') {
+        const token = res1?.data?.data?.loginToken
         // 将username和token保存到cookies中和localStorage中
         if (token) {
           setToken(token)
@@ -287,13 +204,13 @@ const login = (formEl) => {
           localStorage.setItem('token', token)
           localStorage.setItem('username', loginForm.username)
         }
-        ElMessage.success('登录成功！')
+        ElMessage.success('Login success')
         router.push('/home')
       } else if (res1.data.message === '用户已登录') {
         // 如果已经登录了，判断一下浏览器保存的登录信息是不是再次登录的信息，如果是就正常登录
         const cookiesUsername = getUsername()
         if (cookiesUsername === loginForm.username) {
-          ElMessage.success('登录成功！')
+          ElMessage.success('Login success')
           router.push('/home')
         } else {
           ElMessage.warning('用户已在别处登录，请勿重复登录！')
@@ -302,11 +219,10 @@ const login = (formEl) => {
         ElMessage.error('请输入正确的账号密码!')
       }
     } else {
+      ElMessage.error("Login failed, try again later.")
       return false
     }
   })
-
-
 }
 
 const loading = ref(false)

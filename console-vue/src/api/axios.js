@@ -5,7 +5,7 @@ import { ElMessage } from 'element-plus'
 import { isNotEmpty } from '@/utils/plugins.js'
 
 // const baseURL = '/resourcesharing/organizational'
-const BASE_URL = '/api/short-link/admin/v1';
+const BASE_URL = '/api/short-link/admin/';
 const TIMEOUT = 15000;
 const LOGIN_FAILED_CODE = 'A000200';
 const USER_TOKEN_INVALID_CODE = 'A000210';

@@ -1,9 +1,9 @@
 import http from '../axios'
 export default {
   // 注册
-  addUser(data) {
+  register(data) {
     return http({
-      url: '/user',
+      url: '/users/registration',
       method: 'post',
       data
     })
@@ -19,7 +19,7 @@ export default {
   // 登录
   login(data) {
     return http({
-      url: '/user/login',
+      url: '/users/login',
       method: 'post',
       data
     })
@@ -34,7 +34,7 @@ export default {
   // 检查用户名是否可用
   hasUsername(data) {
     return http({
-      url: '/user/has-username',
+      url: '/users/existence',
       method: 'get',
       params: data
     })
