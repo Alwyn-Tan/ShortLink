@@ -18,6 +18,7 @@ import org.alwyn.shortlink.admin.dto.req.UserRegistrationReqDTO;
 import org.alwyn.shortlink.admin.dto.req.UserUpdateReqDTO;
 import org.alwyn.shortlink.admin.dto.resp.UserLoginRespDTO;
 import org.alwyn.shortlink.admin.dto.resp.UserRespDTO;
+import org.alwyn.shortlink.admin.service.GroupService;
 import org.alwyn.shortlink.admin.service.UserService;
 import org.redisson.api.RBloomFilter;
 import org.redisson.api.RLock;
@@ -29,6 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.alwyn.shortlink.admin.common.constant.RedisConstant.LOCK_USER_REGISTRATION_KEY;
 import static org.alwyn.shortlink.admin.common.constant.RedisConstant.USER_LOGIN_KEY;
@@ -40,6 +42,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     private final RBloomFilter<String> usernameBloomFilter;
     private final RedissonClient redissonClient;
     private final StringRedisTemplate stringRedisTemplate;
+    private final GroupService groupService;
 
     @Override
     public UserRespDTO getUserByUsername(String username) {
@@ -75,6 +78,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
                 throw new ClientException(CLIENT_ERROR);
             }
             usernameBloomFilter.add(reqDTO.getUsername());
+            groupService.createGroupByGroupName("default", reqDTO.getUsername());
         } catch (DuplicateKeyException e) {
             throw new ClientException(USER_NAME_EXIST_ERROR);
         } finally {
@@ -111,23 +115,23 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         //query whether the user has login
         Map<Object, Object> hasLoginMap = stringRedisTemplate.opsForHash().entries(USER_LOGIN_KEY + reqDTO.getUsername());
         if (CollUtil.isNotEmpty(hasLoginMap)) {
-            stringRedisTemplate.expire(USER_LOGIN_KEY + reqDTO.getUsername(), 30L, java.util.concurrent.TimeUnit.MINUTES);
-            String loginToken = hasLoginMap.keySet().stream()
+            stringRedisTemplate.expire(USER_LOGIN_KEY + reqDTO.getUsername(), 300L, TimeUnit.DAYS);
+            String token = hasLoginMap.keySet().stream()
                     .findFirst()
                     .map(Object::toString)
                     .orElseThrow(() -> new ClientException(CLIENT_ERROR));
-            return new UserLoginRespDTO(loginToken);
+            return new UserLoginRespDTO(token);
         }
         String uuid = UUID.randomUUID().toString();
         stringRedisTemplate.opsForHash().put(USER_LOGIN_KEY + reqDTO.getUsername(), uuid, JSON.toJSONString(userDO));
-        stringRedisTemplate.expire(USER_LOGIN_KEY + reqDTO.getUsername(), 30L, java.util.concurrent.TimeUnit.MINUTES);
+        //stringRedisTemplate.expire(USER_LOGIN_KEY + reqDTO.getUsername(), 300L, java.util.concurrent.TimeUnit.DAYS);
         return new UserLoginRespDTO(uuid);
 
     }
 
     @Override
-    public Boolean checkLoginByUsernameAndLoginToken(String username, String loginToken) {
-        return stringRedisTemplate.opsForHash().get(USER_LOGIN_KEY + username, loginToken) != null;
+    public Boolean checkLoginByUsernameAndLoginToken(String username, String token) {
+        return stringRedisTemplate.opsForHash().get(USER_LOGIN_KEY + username, token) != null;
     }
 
     @Override

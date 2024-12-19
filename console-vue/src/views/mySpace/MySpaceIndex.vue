@@ -3,7 +3,7 @@
     <div class="options-box">
       <div class="option-title flex-box">
         <div>
-          短链分组<span> 共{{ editableTabs?.length }}组</span>
+          Group <span> (Total:{{ editableTabs?.length}})</span>
         </div>
         <div class="hover-box" style="width: 24px" @click="showAddGroup">
           <img src="@/assets/svg/添加.svg" alt="" />
@@ -65,7 +65,7 @@
           :class="{ selectedItem: selectedIndex === -1 }"
           @click="recycleBin"
         >
-          回收站
+          Recycle Bin
           <el-icon style="margin-left: 5px; font-size: 20px">
             <Delete />
           </el-icon>
@@ -83,10 +83,10 @@
               type="primary"
               style="width: 130px; margin-right: 10px"
               @click="isAddSmallLink = true"
-              >创建短链</el-button
+              >Create Short-link</el-button
             >
             <el-button style="width: 130px; margin-right: 10px" @click="isAddSmallLinks = true"
-              >批量创建</el-button
+              >Batch Creation</el-button
             >
           </div>
         </div>
@@ -105,12 +105,12 @@
           <!-- 数据为空时展示的内容 -->
           <template #empty>
             <div style="height: 60vh; display: flex; align-items: center; justify-content: center">
-              暂无链接
+              No Data
             </div>
           </template>
           <el-table-column label="短链接信息" prop="info" min-width="300">
             <template #header>
-              <span>短链接信息</span>
+              <span>Short-link Info</span>
               <el-dropdown>
                 <div class="block" style="margin-top: 3px">
                   <el-icon>
@@ -154,7 +154,7 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="短链接网址" prop="url" min-width="300">
+          <el-table-column label="URL" prop="url" min-width="300">
             <template #default="scope">
               <div class="table-url-box">
                 <!-- 当失效后就不能在点击跳转了 -->
@@ -196,7 +196,7 @@
           </el-table-column>
           <el-table-column label="访问次数" prop="times" width="120">
             <template #header>
-              <span>访问次数</span>
+              <span>Visit Count</span>
               <el-dropdown>
                 <div class="block" style="margin-top: 3px">
                   <el-icon>
@@ -222,9 +222,9 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="访问人数" prop="people" width="120">
+          <el-table-column label="Unique Visit" prop="people" width="120">
             <template #header>
-              <span>访问人数</span>
+              <span>Unique Visit</span>
               <el-dropdown>
                 <div class="block" style="margin-top: 3px">
                   <el-icon>
@@ -250,9 +250,9 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="IP数" prop="IP" width="120">
+          <el-table-column label="IP Count" prop="IP" width="120">
             <template #header>
-              <span>IP数</span>
+              <span>IP Count</span>
               <el-dropdown>
                 <div class="block" style="margin-top: 3px">
                   <el-icon>
@@ -278,7 +278,7 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column fixed="right" label="操作" width="180">
+          <el-table-column fixed="right" label="More" width="180">
             <template #default="scope">
               <div style="display: flex; align-items: center">
                 <!-- <el-link
@@ -374,16 +374,16 @@
       top="60px"
     ></ChartsInfo>
     <!-- 新建分组弹框 -->
-    <el-dialog v-model="isAddGroup" title="新建短链接分组" style="width: 40%">
+    <el-dialog v-model="isAddGroup" title="Add new group" style="width: 40%">
       <el-form :model="form">
-        <el-form-item label="分组名称：" :label-width="formLabelWidth">
+        <el-form-item label="Group name：" :label-width="formLabelWidth">
           <el-input autocomplete="off" v-model="newGroupName" />
         </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="isAddGroup = false">取消</el-button>
-          <el-button type="primary" @click="addGroup" :disabled="addGroupLoading"> 确认 </el-button>
+          <el-button @click="isAddGroup = false">Cancel</el-button>
+          <el-button type="primary" @click="addGroup" :disabled="addGroupLoading"> Confirm </el-button>
         </span>
       </template>
     </el-dialog>
@@ -522,7 +522,7 @@ const chartsVisible = async (rowInfo, dateList) => {
     statsFormData.startDate = dateList?.[0]
     statsFormData.endDate = dateList?.[1]
   }
-  const res = await API.smallLinkPage.queryLinkStats({ ...statsFormData, fullShortUrl, gid })
+  const res = await API.link.queryLinkStats({ ...statsFormData, fullShortUrl, gid })
   chartsInfo.value = res?.data?.data
   console.log(res?.data?.data)
   // debugger
@@ -604,7 +604,7 @@ const totalNums = ref(0)
 const queryPage = async () => {
   pageParams.gid = editableTabs.value?.[selectedIndex.value]?.gid
   // console.log('------', editableTabs.value, selectedIndex.value)
-  const res = await API.smallLinkPage.queryPage(pageParams)
+  const res = await API.link.queryPage(pageParams)
   tableData.value = res.data?.data?.records
   totalNums.value = +res.data?.data?.total
   // console.log('获取到的页面数据', res)
@@ -631,7 +631,7 @@ const isRecycleBin = ref(false)
 const recycleBinNums = ref(0) // 回收站中的数量
 // 获取回收站页面，gid到时候要删除
 const queryRecycleBinPage = () => {
-  API.smallLinkPage
+  API.link
     .queryRecycleBin({ current: pageParams.current, size: pageParams.size })
     .then((res) => {
       tableData.value = res.data?.data?.records
@@ -763,7 +763,7 @@ const coverEditLink = () => {
 // 移动到回收站
 const toRecycleBin = (data) => {
   const { gid, fullShortUrl } = data
-  API.smallLinkPage
+  API.link
     .toRecycleBin({ gid, fullShortUrl })
     .then((res) => {
       ElMessage.success('删除成功')
@@ -776,7 +776,7 @@ const toRecycleBin = (data) => {
 // 回收站中恢复
 const recoverLink = (data) => {
   const { gid, fullShortUrl } = data
-  API.smallLinkPage
+  API.link
     .recoverLink({ gid, fullShortUrl })
     .then((res) => {
       ElMessage.success('恢复成功')
@@ -789,7 +789,7 @@ const recoverLink = (data) => {
 // 从回收站中删除
 const removeLink = (data) => {
   const { gid, fullShortUrl } = data
-  API.smallLinkPage
+  API.link
     .removeLink({ gid, fullShortUrl })
     .then((res) => {
       ElMessage.success('删除成功')

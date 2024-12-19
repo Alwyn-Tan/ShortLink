@@ -3,7 +3,7 @@ export default {
   // 查询分组集合
   queryGroup(data) {
     return http({
-      url: '/group',
+      url: '/group/query',
       method: 'get',
       params: data
     })
@@ -11,7 +11,7 @@ export default {
   // 新增短链分组
   addGroup(data) {
     return http({
-      url: '/group',
+      url: '/group/creation',
       method: 'post',
       data
     })

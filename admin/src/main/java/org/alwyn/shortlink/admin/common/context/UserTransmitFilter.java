@@ -18,6 +18,8 @@ import java.io.PrintWriter;
 import java.util.List;
 import java.util.Objects;
 
+import static org.alwyn.shortlink.admin.common.constant.RedisConstant.USER_LOGIN_KEY;
+
 @RequiredArgsConstructor
 public class UserTransmitFilter implements Filter {
     private final StringRedisTemplate stringRedisTemplate;
@@ -36,7 +38,7 @@ public class UserTransmitFilter implements Filter {
             String method = httpServletRequest.getMethod();
             if (!(Objects.equals(requestURI, "/api/short-link/admin/users/registration") && Objects.equals(method, "POST"))) {
                 String username = httpServletRequest.getHeader("username");
-                String token = httpServletRequest.getHeader("loginToken");
+                String token = httpServletRequest.getHeader("token");
 
                 // username or token is empty
                 if (!StrUtil.isAllNotBlank(username, token)) {
@@ -46,8 +48,9 @@ public class UserTransmitFilter implements Filter {
 
                 Object userInfoJsonString;
                 try {
-                    userInfoJsonString = stringRedisTemplate.opsForHash().get("login_" + username, token);
+                    userInfoJsonString = stringRedisTemplate.opsForHash().get(USER_LOGIN_KEY + username, token);
                     if (userInfoJsonString == null) {
+                        System.out.println("user info null");
                         throw new ClientException(ErrorResponse.USER_TOKEN_INVALID_ERROR);
                     }
                 } catch (Exception e) {

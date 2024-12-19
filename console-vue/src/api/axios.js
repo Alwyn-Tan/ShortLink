@@ -34,7 +34,7 @@ http.interceptors.response.use(
     if (res.data.code === LOGIN_FAILED_CODE || res.data.code === USER_TOKEN_INVALID_CODE) {
       localStorage.removeItem('token')
     }
-    if (res.status == 0 || res.status == 200) {
+    if (res.status === 0 || res.status === 200) {
       // 请求成功对响应数据做处理，此处返回的数据是axios.then(res)中接收的数据
       // code值为 0 或 200 时视为成功
       return Promise.resolve(res)

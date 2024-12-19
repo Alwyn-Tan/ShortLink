@@ -120,7 +120,7 @@ const isLoading = ref(false)
 const queryTitle = (url) => {
   if (reg.test(url)) {
     isLoading.value = true
-    API.smallLinkPage.queryTitle({ url: url }).then(res => {
+    API.link.queryTitle({ url: url }).then(res => {
       formData.describe = res?.data?.data
       isLoading.value = false
     })
@@ -234,7 +234,7 @@ const onSubmit = async (formEl) => {
   }
   await formEl.validate(async (valid, fields) => {
     if (valid) {
-      const res = await API.smallLinkPage.addSmallLink(formData)
+      const res = await API.link.addSmallLink(formData)
       ElMessage.success('创建成功！')
       emits('onSubmit', false)
       console.log('submit!', res)

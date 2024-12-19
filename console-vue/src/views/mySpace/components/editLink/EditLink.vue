@@ -117,7 +117,7 @@ const fd = (fn, delay) => {
 }
 const queryTitle = (url) => {
   if (reg.test(url)) {
-    API.smallLinkPage.queryTitle({ url: url }).then(res => {
+    API.link.queryTitle({ url: url }).then(res => {
       formData.describe = res?.data?.data
     })
   }
@@ -236,7 +236,7 @@ const onSubmit = async (formEl) => {
   await formEl.validate(async (valid, fields) => {
     if (valid) {
       emits('onSubmit', false)
-      const res = await API.smallLinkPage.editSmallLink(formData)
+      const res = await API.link.editSmallLink(formData)
       console.log('submit!', res)
     } else {
       console.log('error submit!', fields)

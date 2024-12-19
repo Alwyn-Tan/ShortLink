@@ -41,22 +41,22 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
     };
 
     @Override
-    public void createGroupByGroupName(String groupname) {
-        createGroupByGroupName(groupname, UserContext.getUserNameFromUserContext());
+    public void createGroupByGroupName(String groupName) {
+        createGroupByGroupName(groupName, UserContext.getUserNameFromUserContext());
     }
 
     @Override
-    public void createGroupByGroupName(String groupname, String username) {
+    public void createGroupByGroupName(String groupName, String username) {
         if (username == null) {
             throw new ServiceException(USER_LOGIN_ERROR);
         }
-        if (groupname == null) {
+        if (groupName == null) {
             throw new ClientException(GROUP_NAME_NULL_ERROR);
         }
         LambdaQueryWrapper<GroupDO> lamdaQueryWrapper = Wrappers.lambdaQuery(GroupDO.class)
                 .eq(GroupDO::getUsername, username)
                 .eq(GroupDO::getDelFlag, 0)
-                .eq(GroupDO::getGroupname, groupname);
+                .eq(GroupDO::getGroupname, groupName);
         if (baseMapper.selectCount(lamdaQueryWrapper) > 0) {
             GroupDO groupDORecreated = new GroupDO();
             groupDORecreated.setDelFlag(0);
@@ -74,7 +74,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
             while (tryCount <= MAX_RETRY_LIMIT) {
                 String gid = RandomGenerator.generateRandom();
                 if (!gidBloomFilter.contains(gid)) {
-                    GroupDO groupDO = GroupDO.builder().gid(gid).groupname(groupname).username(username).sortOrder(0).build();
+                    GroupDO groupDO = GroupDO.builder().gid(gid).groupname(groupName).username(username).sortOrder(0).build();
                     baseMapper.insert(BeanUtil.toBean(groupDO, GroupDO.class));
                     gidBloomFilter.add(gid);
                     break;

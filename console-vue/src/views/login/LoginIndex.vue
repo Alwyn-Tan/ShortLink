@@ -196,7 +196,7 @@ const login = (formEl) => {
     if (valid) {
       const res1 = await API.user.login(loginForm)
       if (res1.data.code === '0000000') {
-        const token = res1?.data?.data?.loginToken
+        const token = res1?.data?.data?.token
         // 将username和token保存到cookies中和localStorage中
         if (token) {
           setToken(token)

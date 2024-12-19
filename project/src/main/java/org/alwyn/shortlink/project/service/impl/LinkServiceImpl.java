@@ -213,7 +213,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
                     LinkRouteDO linkRouteDO = linkRouteMapper.selectOne(linkRouteDOLambdaQueryWrapper);
                     if (linkRouteDO == null) {
                         //Database miss
-                        stringRedisTemplate.opsForValue().set(String.format(NULL_LINK_KEY, fullShortLink), "-", 30, TimeUnit.MINUTES);
+                        stringRedisTemplate.opsForValue().set(String.format(NULL_LINK_KEY, fullShortLink), "-", 300, TimeUnit.DAYS);
                         ((HttpServletResponse) response).sendRedirect("/link/missing");
                         return;
                     } else {
@@ -225,7 +225,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
                         LinkDO linkDO = baseMapper.selectOne(linkDOLambdaQueryWrapper);
                         if (linkDO.getValidDateType() != null && linkDO.getValidDate().before(new Date())) {
                             //Link Timeout
-                            stringRedisTemplate.opsForValue().set(String.format(NULL_LINK_KEY, fullShortLink), "-", 30, TimeUnit.MINUTES);
+                            stringRedisTemplate.opsForValue().set(String.format(NULL_LINK_KEY, fullShortLink), "-", 300, TimeUnit.DAYS);
                             ((HttpServletResponse) response).sendRedirect("/link/missing");
                             return;
                         }

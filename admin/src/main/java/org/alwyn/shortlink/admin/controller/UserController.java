@@ -58,13 +58,13 @@ public class UserController {
     }
 
     @GetMapping("/api/short-link/admin/users/check-login")
-    public Result<Boolean> checkLoginByUsernameAndLoginToken(@RequestParam("username") String username, @RequestParam("loginToken") String loginToken) {
-        return Results.success(userService.checkLoginByUsernameAndLoginToken(username, loginToken));
+    public Result<Boolean> checkLoginByUsernameAndToken(@RequestParam("username") String username, @RequestParam("token") String token) {
+        return Results.success(userService.checkLoginByUsernameAndLoginToken(username, token));
     }
 
     @DeleteMapping("/api/short-link/admin/users/logout")
-    public Result<Void> logoutUserByUsernameAndLoginToken(@RequestParam("username") String username, @RequestParam("loginToken") String loginToken) {
-        userService.logoutUserByUsernameAndLoginToken(username, loginToken);
+    public Result<Void> logoutUserByUsernameAndToken(@RequestParam("username") String username, @RequestParam("token") String token) {
+        userService.logoutUserByUsernameAndLoginToken(username, token);
         return Results.success();
     }
 

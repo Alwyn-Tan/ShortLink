@@ -18,7 +18,7 @@ public class GroupController {
 
     @PostMapping("/api/short-link/admin/group/creation")
     public Result<Void> createGroupByGroupName(@RequestBody GroupCreationReqDTO requestParam) {
-        groupService.createGroupByGroupName(requestParam.getGroupname(), requestParam.getUsername());
+        groupService.createGroupByGroupName(requestParam.getGroupName());
         return Results.success();
     }
 

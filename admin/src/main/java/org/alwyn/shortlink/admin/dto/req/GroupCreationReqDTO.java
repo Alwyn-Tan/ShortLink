@@ -4,6 +4,5 @@ import lombok.Data;
 
 @Data
 public class GroupCreationReqDTO {
-    private String groupname;
-    private String username;
+    private String groupName;
 }
