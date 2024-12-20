@@ -5,7 +5,7 @@ import lombok.Data;
 @Data
 public class GroupUpdateReqDTO {
 
-    private String groupname;
+    private String groupName;
 
     private String gid;
 }

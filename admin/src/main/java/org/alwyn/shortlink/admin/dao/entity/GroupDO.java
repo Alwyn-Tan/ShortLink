@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 public class GroupDO extends BaseDO {
     private Long id;
     private String gid;
-    private String groupname;
+    private String groupName;
     private String username;
     private Integer sortOrder;
 }

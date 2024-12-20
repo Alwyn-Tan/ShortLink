@@ -8,9 +8,9 @@ import org.alwyn.shortlink.admin.dto.resp.GroupListQueryRespDTO;
 import java.util.List;
 
 public interface GroupService extends IService<GroupDO> {
-    void createGroupByGroupName(String groupname);
+    void createGroupByGroupName(String groupName);
 
-    void createGroupByGroupName(String groupname, String username);
+    void createGroupByGroupName(String groupName, String username);
 
     List<GroupListQueryRespDTO> listGroup();
 

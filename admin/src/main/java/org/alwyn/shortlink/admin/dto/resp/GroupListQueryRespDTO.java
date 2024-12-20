@@ -7,7 +7,7 @@ public class GroupListQueryRespDTO {
 
     private String gid;
 
-    private String groupname;
+    private String groupName;
 
     private String username;
 

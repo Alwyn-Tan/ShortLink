@@ -56,7 +56,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
         LambdaQueryWrapper<GroupDO> lamdaQueryWrapper = Wrappers.lambdaQuery(GroupDO.class)
                 .eq(GroupDO::getUsername, username)
                 .eq(GroupDO::getDelFlag, 0)
-                .eq(GroupDO::getGroupname, groupName);
+                .eq(GroupDO::getGroupName, groupName);
         if (baseMapper.selectCount(lamdaQueryWrapper) > 0) {
             GroupDO groupDORecreated = new GroupDO();
             groupDORecreated.setDelFlag(0);
@@ -74,7 +74,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
             while (tryCount <= MAX_RETRY_LIMIT) {
                 String gid = RandomGenerator.generateRandom();
                 if (!gidBloomFilter.contains(gid)) {
-                    GroupDO groupDO = GroupDO.builder().gid(gid).groupname(groupName).username(username).sortOrder(0).build();
+                    GroupDO groupDO = GroupDO.builder().gid(gid).groupName(groupName).username(username).sortOrder(0).build();
                     baseMapper.insert(BeanUtil.toBean(groupDO, GroupDO.class));
                     gidBloomFilter.add(gid);
                     break;
@@ -107,7 +107,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
                 .eq(GroupDO::getUsername, UserContext.getUserNameFromUserContext())
                 .eq(GroupDO::getDelFlag, 0)
                 .eq(GroupDO::getGid, requestParam.getGid());
-        GroupDO groupDOUpdated = GroupDO.builder().groupname(requestParam.getGroupname()).build();
+        GroupDO groupDOUpdated = GroupDO.builder().groupName(requestParam.getGroupName()).build();
         return baseMapper.update(groupDOUpdated, lambdaUpdateWrapper);
     }
 
