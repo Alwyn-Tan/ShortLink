@@ -13,6 +13,7 @@ import org.alwyn.shortlink.admin.common.exception.ServiceException;
 import org.alwyn.shortlink.admin.common.tool.RandomGenerator;
 import org.alwyn.shortlink.admin.dao.entity.GroupDO;
 import org.alwyn.shortlink.admin.dao.mapper.GroupMapper;
+import org.alwyn.shortlink.admin.dto.req.GroupSortReqDTO;
 import org.alwyn.shortlink.admin.dto.req.GroupUpdateReqDTO;
 import org.alwyn.shortlink.admin.dto.resp.GroupListQueryRespDTO;
 import org.alwyn.shortlink.admin.remote.LinkRemoteService;
@@ -120,5 +121,17 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
         GroupDO groupDOUpdated = new GroupDO();
         groupDOUpdated.setDelFlag(1);
         return baseMapper.update(groupDOUpdated, lambdaUpdateWrapper);
+    }
+
+    @Override
+    public void sortGroup(List<GroupSortReqDTO> requestParam) {
+        requestParam.forEach(each -> {
+            GroupDO groupDO = GroupDO.builder().sortOrder(each.getSortOrder()).build();
+            LambdaUpdateWrapper<GroupDO> updateWrapper = Wrappers.lambdaUpdate(GroupDO.class)
+                    .eq(GroupDO::getUsername, UserContext.getUserNameFromUserContext())
+                    .eq(GroupDO::getGid, each.getGid())
+                    .eq(GroupDO::getDelFlag, 0);
+            baseMapper.update(groupDO, updateWrapper);
+        });
     }
 }

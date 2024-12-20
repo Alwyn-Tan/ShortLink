@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.alwyn.shortlink.admin.common.result.Result;
 import org.alwyn.shortlink.admin.common.result.Results;
 import org.alwyn.shortlink.admin.dto.req.GroupCreationReqDTO;
+import org.alwyn.shortlink.admin.dto.req.GroupSortReqDTO;
 import org.alwyn.shortlink.admin.dto.req.GroupUpdateReqDTO;
 import org.alwyn.shortlink.admin.dto.resp.GroupListQueryRespDTO;
 import org.alwyn.shortlink.admin.service.GroupService;
@@ -37,6 +38,10 @@ public class GroupController {
         return Results.success(groupService.deleteGroupByGid(gid));
     }
 
-
+    @PostMapping("/api/short-link/admin/group/sort")
+    public Result<Void> sortGroup(@RequestParam List<GroupSortReqDTO> requestParam) {
+        groupService.sortGroup(requestParam);
+        return Results.success();
+    }
 }
 
