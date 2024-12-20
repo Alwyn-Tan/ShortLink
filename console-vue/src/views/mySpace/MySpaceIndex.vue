@@ -474,6 +474,7 @@ import EditLink from './components/editLink/EditLink.vue'
 import {ElMessage} from 'element-plus'
 import defaultImg from '@/assets/png/短链默认图标.png'
 import QRCode from './components/qrCode/QRCode.vue'
+import form from "view-ui-plus/src/mixins/form";
 
 const {proxy} = getCurrentInstance()
 const API = proxy.$API
@@ -671,12 +672,12 @@ const showAddGroup = () => {
 // 添加分组
 const addGroup = async () => {
   addGroupLoading.value = true
-  const res1 = await API.group.addGroup({name: newGroupName.value})
+  const res1 = await API.group.addGroup({groupName: newGroupName.value})
   if (res1?.data.success) {
-    ElMessage.success('添加成功')
-    getGroupInfo(queryLinkPage)
+    ElMessage.success('Successfully added!')
+    await getGroupInfo(queryLinkPage)
   } else {
-    ElMessage.error('添加失败')
+    ElMessage.error('Failed...')
   }
   isAddGroup.value = false
   addGroupLoading.value = false
