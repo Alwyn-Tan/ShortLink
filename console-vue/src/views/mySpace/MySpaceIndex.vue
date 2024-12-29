@@ -47,10 +47,10 @@
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item @click="showEditGroup(item.gid, item.name)"
-                    >编辑
+                    >Edit
                     </el-dropdown-item
                     >
-                    <el-dropdown-item @click="deleteGroup(item.gid)">删除</el-dropdown-item>
+                    <el-dropdown-item @click="deleteGroup(item.gid)">Delete</el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
