@@ -19,19 +19,19 @@
           >
             <div style="display: flex">
               <img src="@/assets/svg/移动 竖.svg" width="13" style="margin-right: 3px" alt=""/>
-              <span class="over-text">{{ item.name }}</span>
+              <span class="over-text">{{ item.groupName }}</span>
             </div>
             <div class="flex-box">
               <!-- 图标 -->
               <el-tooltip
                   class="box-item"
                   effect="dark"
-                  :content="item.shortLinkCount === 0 ? '无数据' : '查看图表'"
+                  :content="item.linkCount === 0 ? '无数据' : '查看图表'"
                   placement="bottom-end"
               >
                 <el-icon
                     class="edit"
-                    :class="{ zero: item.shortLinkCount === 0 }"
+                    :class="{ zero: item.linkCount === 0 }"
                     @click="chartsVisible(item.name)"
                 >
                   <Histogram/>
@@ -46,7 +46,7 @@
                 </div>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item @click="showEditGroup(item.gid, item.name)"
+                    <el-dropdown-item @click="showEditGroup(item.gid, item.groupName)"
                     >Edit
                     </el-dropdown-item
                     >
@@ -54,7 +54,7 @@
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
-              <span class="item-length">{{ item.shortLinkCount }}</span>
+              <span class="item-length">{{ item.linkCount }}</span>
             </div>
           </div>
         </li>
