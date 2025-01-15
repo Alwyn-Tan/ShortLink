@@ -8,8 +8,6 @@ import java.util.Date;
 
 @Data
 public class LinkCreateReqDTO {
-    private String domain;
-
     private String originLink;
 
     private String gid;

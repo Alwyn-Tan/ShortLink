@@ -83,11 +83,11 @@
             <el-button
                 type="primary"
                 style="width: 130px; margin-right: 10px"
-                @click="isAddSmallLink = true"
+                @click="isCreateShortLink = true"
             >Create Short-link
             </el-button
             >
-            <el-button style="width: 130px; margin-right: 10px" @click="isAddSmallLinks = true"
+            <el-button style="width: 130px; margin-right: 10px" @click="isCreateShortLinks = true"
             >Batch Creation
             </el-button
             >
@@ -408,17 +408,8 @@
       </template>
     </el-dialog>
     <!-- 创建短链弹框 -->
-    <el-dialog @close="afterAddLink" v-model="isAddSmallLink" title="创建链接">
+    <el-dialog @close="afterAddLink" v-model="isCreateShortLink" title="Create your short-link">
       <el-tabs class="demo-tabs">
-        <el-tab-pane>
-          <template #label>
-            <span class="custom-tabs-label">
-              <el-icon>
-                <Link/>
-              </el-icon>
-              <span>普通跳转</span>
-            </span>
-          </template>
           <CreateLink
               ref="createLink1Ref"
               :groupInfo="editableTabs"
@@ -426,19 +417,6 @@
               @cancel="cancelAddLink"
               :is-single="true"
           ></CreateLink>
-        </el-tab-pane>
-        <el-tab-pane>
-          <template #label>
-            <span class="custom-tabs-label">
-              <el-icon>
-                <Connection/>
-              </el-icon>
-              <span>随机跳转</span>
-            </span></template
-          >
-          暂未开发
-        </el-tab-pane
-        >
       </el-tabs>
     </el-dialog>
     <!-- 修改短链信息弹框 -->
@@ -452,7 +430,7 @@
       ></EditLink>
     </el-dialog>
     <!-- 批量创建短链弹框 -->
-    <el-dialog @close="afterAddLink" v-model="isAddSmallLinks" title="批量链接">
+    <el-dialog @close="afterAddLink" v-model="isCreateShortLinks" title="批量链接">
       <CreateLink
           ref="createLink2Ref"
           :groupInfo="editableTabs"
@@ -718,17 +696,17 @@ const editGroup = async () => {
   editGroupLoading.value = false
 }
 // 创建短链
-const isAddSmallLink = ref(false)
-const isAddSmallLinks = ref(false)
+const isCreateShortLink = ref(false)
+const isCreateShortLinks = ref(false)
 // 关闭新建短链接弹窗
 const addLink = () => {
-  isAddSmallLink.value = false
-  isAddSmallLinks.value = false
+  isCreateShortLink.value = false
+  isCreateShortLinks.value = false
 }
 // 新建批量新建短链接弹窗
 const cancelAddLink = () => {
-  isAddSmallLink.value = false
-  isAddSmallLinks.value = false
+  isCreateShortLink.value = false
+  isCreateShortLinks.value = false
 }
 const getImgUrl = (url) => {
   return url ?? defaultImg

@@ -74,17 +74,21 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
     private final RedissonClient redissonClient;
     private final AccessStatsMapper accessStatsMapper;
     private final AccessLocationStatsMapper accessLocationStatsMapper;
+
     @Value("${short-link.stats.location.amap-key}")
     private String amapApiKey;
+
+    @Value("${short-link.domain.default}")
+    private String defaultDomain;
 
     @Transactional(rollbackFor = Exception.class)
     @Override
     public LinkCreateRespDTO createShortLink(LinkCreateReqDTO requestParam) {
         String suffix = generateLinkSuffix(requestParam);
-        String fullShortLink = "http://" + requestParam.getDomain() + ":8080/" + suffix;
+        String fullShortLink = "http://" + defaultDomain + ":8080/" + suffix;
 
         LinkDO linkDO = LinkDO.builder()
-                .domain(requestParam.getDomain())
+                .domain(defaultDomain)
                 .suffix(suffix)
                 .originLink(requestParam.getOriginLink())
                 .fullShortLink(fullShortLink)
@@ -264,7 +268,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, LinkDO> implements 
             String originLink = requestParam.getOriginLink();
             originLink += UUID.randomUUID().toString();
             linkSuffix = HashUtil.hashToBase62(originLink);
-            String fullShortLink = "http://" + requestParam.getDomain() + ":8080/" + linkSuffix;
+            String fullShortLink = "http://" + defaultDomain + ":8080/" + linkSuffix;
             if (!shortLinkBloomFilter.contains(fullShortLink)) {
                 return linkSuffix;
             }

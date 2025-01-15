@@ -36,6 +36,7 @@ import static org.alwyn.shortlink.admin.common.constant.RedisConstant.LOCK_USER_
 import static org.alwyn.shortlink.admin.common.constant.RedisConstant.USER_LOGIN_KEY;
 import static org.alwyn.shortlink.admin.common.error.ErrorResponse.*;
 
+@SuppressWarnings("ALL")
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements UserService {

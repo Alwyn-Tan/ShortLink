@@ -1,18 +1,18 @@
 <template>
   <div>
-    <el-form ref="ruleFormRef" :model="formData" :rules="formRule" label-width="80px">
-      <el-form-item label="跳转链接" prop="originUrl">
-        <el-input v-if="isSingle" v-model="formData.originUrl" placeholder="请输入http://或https://开头的链接或应用跳转链接"></el-input>
+    <el-form ref="ruleFormRef" :model="formData" :rules="formRule" label-width="120px">
+      <el-form-item label="Original URL" prop="originUrl">
+        <el-input v-if="isSingle" v-model="formData.originUrl" placeholder="Please enter URL started with http:// or https://"></el-input>
         <el-input v-else :rows="4" v-model="formData.originUrl" type="textarea"
           placeholder="请输入http://或https://开头的链接或应用跳转链接，一行一个，最多100行" />
       </el-form-item>
-      <el-form-item label="描述信息" prop="describe">
+      <el-form-item label="Description" prop="describe">
         <el-input v-loading="isLoading" :rows="4" v-model="formData.describe" type="textarea"
           placeholder="可通过换行创建多个短链，一行一个，单次最多创建50条" />
         <span>{{ describeRows + '/' + maxDescribeRows }}</span>
       </el-form-item>
 
-      <el-form-item label="短链分组" prop="gid">
+      <el-form-item label="Group" prop="gid">
         <el-select v-model="formData.gid" placeholder="请选择">
           <el-option v-for="item in groupInfo" :key="item.gid" :label="item.name" :value="item.gid" />
         </el-select>

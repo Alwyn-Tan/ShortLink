@@ -18,6 +18,8 @@ spring:
       suffix: .html
 
 short-link:
+  domain:
+    default: alink.com
   stats:
     location:
       amap-key: b044157c580523f225ce980af3cff4ff

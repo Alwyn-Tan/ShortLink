@@ -84,7 +84,6 @@ const firstName = ref('')
 onMounted(async () => {
   const username = getUsername()
   const res = await API.user.queryUserInfo(username)
-  firstName.value = res?.data?.data?.realName?.split('')[0]
 })
 const extractColorByName = (name) => {
   var temp = [];
