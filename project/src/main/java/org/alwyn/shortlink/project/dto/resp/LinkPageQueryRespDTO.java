@@ -11,7 +11,7 @@ public class LinkPageQueryRespDTO {
 
     private String domain;
 
-    private String shortLink;
+    private String suffix;
 
     private String fullShortLink;
 

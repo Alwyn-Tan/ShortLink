@@ -49,8 +49,7 @@ public class RecycleBinServiceImpl extends ServiceImpl<LinkMapper, LinkDO> imple
                 .orderByDesc(LinkDO::getUpdateTime);
         IPage<LinkDO> resultPage = baseMapper.selectPage(requestParam, queryWrapper);
         return resultPage.convert(each -> {
-            LinkPageQueryRespDTO respDTO = BeanUtil.toBean(each, LinkPageQueryRespDTO.class);
-            return respDTO;
+            return BeanUtil.toBean(each, LinkPageQueryRespDTO.class);
         });
     }
 
