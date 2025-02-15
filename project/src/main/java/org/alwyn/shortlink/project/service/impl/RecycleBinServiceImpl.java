@@ -39,6 +39,9 @@ public class RecycleBinServiceImpl extends ServiceImpl<LinkMapper, LinkDO> imple
 
     @Override
     public IPage<LinkPageQueryRespDTO> queryRecycleBinPage(RecycleBinPageQueryReqDTO requestParam) {
+        if(requestParam.getGidList() == null || requestParam.getGidList().size() == 0){
+            System.out.println("NULL");
+        }
         LambdaQueryWrapper<LinkDO> queryWrapper = Wrappers.lambdaQuery(LinkDO.class)
                 .in(LinkDO::getGid, requestParam.getGidList())
                 .eq(LinkDO::getEnableStatus, 0)

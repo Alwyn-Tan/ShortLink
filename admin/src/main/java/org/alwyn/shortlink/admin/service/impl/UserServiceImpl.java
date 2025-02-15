@@ -65,6 +65,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
 
     @Transactional(rollbackFor = Exception.class)
     @Override
+
     public void registerUser(UserRegistrationReqDTO reqDTO) {
         if (Boolean.TRUE.equals(checkUsernameExists(reqDTO.getUsername()))) {
             throw new ClientException(USER_NAME_EXIST_ERROR);
